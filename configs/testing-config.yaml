@@ -1,0 +1,3 @@
+docker:
+    network-name: "local-testnet"
+    ip-subnet: "10.0.20.0/16"
