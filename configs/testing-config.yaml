@@ -1,25 +1,28 @@
 docker:
     network-name: "local-testnet"
     ip-subnet: "10.0.20.0/16"
+    volumes: ['./shared-data:/data/']
 
 # do not modify these, they are populated dynamically when we create the
-# scenarios. (TODO)
+# scenarios. (populated in create_scenarios.py)
 universal:
     now: 0xdeadbeef
+    ip-skip: 2 # should be equal to the number of possible clients
 
 pow-chain:
     geth:
         # values for geth-client docker.
-        ip: "10.0.20.2"
+        ip-start: "10.0.20.2"
         image: "geth-client"
         tag: "latest"
+        num-nodes: 1
+        debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
         # arguments for running geth.
-        network_id: 0x01000666
-        http_port: 8545
-        ws_port: 8546
-        http_cors: "*"
-        http_apis: "net,eth,web3,personal"
-        ws_apis: "net,eth,web3,personal"
+        network-id: 0x01000666
+        http-port: 8545
+        ws-port: 8546
+        http-apis: "net,eth,web3,personal"
+        ws-apis: "net,eth,web3,personal"
 
     geth-genesis:
         genesis-delay: 10 # seconds from now for genesis timestamp.
@@ -44,8 +47,8 @@ pow-chain:
             "m/44'/60'/0'/0/3" : "10000"
 
     files:
-        #eth1-genesis-file: "/data/eth1-genesis.json" # wrt to docker container.
-        eth1-genesis-file: "eth1-genesis.json" # wrt to docker container.
+        eth1-genesis-file: "/data/eth1-genesis.json" # wrt to docker container.
+        #eth1-genesis-file: "eth1-genesis.json" # wrt to docker container.
         geth-data-dir: "/data/local_testnet/geth/"
 
     contracts:

@@ -7,6 +7,78 @@
 from ruamel import yaml
 
 
+class ClientWriter(object):
+    """
+    Generic client class to write services to docker-compose
+    Just use this template and add your entrypoint in child class.
+    """
+
+    def __init__(self, global_config, client_config, name, curr_node):
+        self.global_config = global_config
+        self.client_config = client_config
+        # used when we have multiple of the same client.
+        self.curr_node = curr_node
+        # constants.
+        self.name = name
+        self.image = self.client_config["image"]
+        self.tag = self.client_config["tag"]
+        self.network_name = self.global_config["docker"]["network-name"]
+        self.volumes = self.global_config["docker"]["volumes"]
+
+    # inits for child classes.
+    def config(self):
+        return {
+            "image": f"{self.image}:{self.tag}",
+            "volumes": self.volumes,
+            "networks": self._networking(),
+        }
+
+    def get_config(self):
+        config = self.config()
+        if self.client_config["debug"]:
+            config["entrypoint"] = "/bin/bash"
+            config["tty"] = True
+            config["stdin_open"] = True
+        else:
+            config["entrypoint"] = self._entrypoint()
+        return config
+
+    def _networking(self):
+        # first calculate the ip.
+        prefix = ".".join(self.client_config["ip-start"].split(".")[:3]) + "."
+        base = int(self.client_config["ip-start"].split(".")[-1])
+        skip = self.curr_node * int(self.global_config["universal"]["ip-skip"])
+        ip = prefix + str(base + skip)
+
+        return {self.network_name: {"ipv4_address": ip}}
+
+    def _entrypoint(self):
+        raise Exception("over-ride this method")
+
+
+class GethClientWriter(ClientWriter):
+    def __init__(self, global_config, client_config, curr_node):
+        super().__init__(
+            global_config, client_config, f"geth-node-{curr_node}", curr_node
+        )
+        self.out = self.config()
+
+    def _entrypoint(self):
+        """
+        ./launch-geth <datadir> <genesis.json> <network_id> <http port> <http apis> <ws_port> <ws_apis>
+        """
+        return [
+            "/data/scripts/launch-geth.sh",
+            str(self.global_config["pow-chain"]["files"]["geth-data-dir"]),
+            str(self.global_config["pow-chain"]["files"]["eth1-genesis-file"]),
+            str(self.client_config["network-id"]),
+            str(self.client_config["http-port"]),
+            str(self.client_config["http-apis"]),
+            str(self.client_config["ws-port"]),
+            str(self.client_config["ws-apis"]),
+        ]
+
+
 class DockerComposeWriter(object):
     """
     Class to create the actual docker-compose.yaml file.
@@ -31,6 +103,16 @@ class DockerComposeWriter(object):
             },
         }
 
+    def add_services(self):
+        """
+        POW services + POS services.
+        for now POW is geth.
+        """
+        geth_config = self.global_config["pow-chain"]["geth"]
+        for n in range(geth_config["num-nodes"]):
+            gcw = GethClientWriter(self.global_config, geth_config, n)
+            self.yml["services"][gcw.name] = gcw.get_config()
+
     def write_to_file(self, out_file):
         with open(out_file, "w") as f:
             yaml.dump(self.yml, f)
@@ -38,6 +120,7 @@ class DockerComposeWriter(object):
 
 def create_docker_compose(global_config, out_file):
     dcw = DockerComposeWriter(global_config)
+    dcw.add_services()
     dcw.write_to_file(out_file)
 
 
