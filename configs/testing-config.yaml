@@ -1,3 +1,52 @@
 docker:
     network-name: "local-testnet"
     ip-subnet: "10.0.20.0/16"
+
+# do not modify these, they are populated dynamically when we create the
+# scenarios. (TODO)
+universal:
+    now: 0xdeadbeef
+
+pow-chain:
+    geth:
+        # values for geth-client docker.
+        ip: "10.0.20.2"
+        image: "geth-client"
+        tag: "latest"
+        # arguments for running geth.
+        network_id: 0x01000666
+        http_port: 8545
+        ws_port: 8546
+        http_cors: "*"
+        http_apis: "net,eth,web3,personal"
+        ws_apis: "net,eth,web3,personal"
+
+    geth-genesis:
+        genesis-delay: 10 # seconds from now for genesis timestamp.
+        chain-id: 0x01000666
+        homesteadBlock: 0
+        eip150Block: 0
+        eip155Block: 0
+        eip158Block: 0
+        byzantiumBlock: 0
+        constantinopleBlock: 0
+        petersburgBlock: 0
+        istanbulBlock: 0
+        berlinBlock: 0
+
+    accounts:
+        eth1-account-mnemonic: "cat swing flag economy stadium alone churn speed unique patch report train"
+        eth1-passphrase: "testnet-password"
+        eth1-premine:
+            "m/44'/60'/0'/0/0" : "10000"
+            "m/44'/60'/0'/0/1" : "10000"
+            "m/44'/60'/0'/0/2" : "10000"
+            "m/44'/60'/0'/0/3" : "10000"
+
+    files:
+        #eth1-genesis-file: "/data/eth1-genesis.json" # wrt to docker container.
+        eth1-genesis-file: "eth1-genesis.json" # wrt to docker container.
+        geth-data-dir: "/data/local_testnet/geth/"
+
+    contracts:
+        deposit-contract-address: "0x8c594691c0e592ffa21f153a16ae41db5befcaaa"
