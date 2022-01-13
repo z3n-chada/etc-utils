@@ -94,8 +94,9 @@ def create_genesis_ssz(global_config, out_file, docker=True):
         genesis_config = global_config["pos-chain"]["files"]["host-genesis-config"]
 
     ccg = ConsensusGenesisGenerator(global_config, genesis_config)
+    print(f"Writing genesis.ssz to {out_file}")
     ccg.write_to_file(out_file)
-    # ccg.clean_up()
+    ccg.clean_up()
 
 
 if __name__ == "__main__":
