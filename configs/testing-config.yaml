@@ -2,6 +2,9 @@ docker:
     network-name: "local-testnet"
     ip-subnet: "10.0.20.0/16"
     volumes: ['./shared-data:/data/']
+    # for writing the docker-compose.yaml
+    docker-docker-compose-file:  "/source/docker-compose.yaml" #wrt to docker config
+    host-docker-compose-file: "docker-compose.yaml"
 
 # do not modify these unless you know what your are doing, 
 # if the value is 0xdeadbeef its populated dynamically when making
@@ -9,6 +12,7 @@ docker:
 universal:
     now: 0xdeadbeef
     ip-skip: 2 # should be equal to the number of possible clients
+    merge-testnet: False #TODO: will probably require some renaming and moving things around.
 
     consensus-presets:
         #the mainnet preset we use
@@ -90,9 +94,11 @@ pow-chain:
             "m/44'/60'/0'/0/3" : "10000"
 
     files:
-        eth1-genesis-file: "/data/eth1-genesis.json" # wrt to docker container.
+        docker-eth1-genesis-file: "/data/eth1-genesis.json" # wrt to docker container.
+        host-eth1-genesis-file: "shared-data/eth1-genesis.json" # wrt to docker container.
         #eth1-genesis-file: "eth1-genesis.json" # wrt to docker container.
-        geth-data-dir: "/data/local_testnet/geth/"
+        docker-geth-data-dir: "/data/local_testnet/geth/"
+        host-geth-data-dir: "shared-data/local_testnet/geth/"
 
     contracts:
         deposit-contract-address: "0x8c594691c0e592ffa21f153a16ae41db5befcaaa"
@@ -120,3 +126,6 @@ pos-chain:
             chain-id: 0x01000666
             network-id: 0x01000666
             contract-address: "0x8c594691c0e592ffa21f153a16ae41db5befcaaa"
+    files:
+        docker-genesis-config: "/data/local_testnet/eth2-config.yaml"
+        host-genesis-config: "eth2-config.yaml"

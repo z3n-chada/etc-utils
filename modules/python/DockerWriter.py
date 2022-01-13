@@ -69,8 +69,8 @@ class GethClientWriter(ClientWriter):
         """
         return [
             "/data/scripts/launch-geth.sh",
-            str(self.global_config["pow-chain"]["files"]["geth-data-dir"]),
-            str(self.global_config["pow-chain"]["files"]["eth1-genesis-file"]),
+            str(self.global_config["pow-chain"]["files"]["docker-geth-data-dir"]),
+            str(self.global_config["pow-chain"]["files"]["docker-eth1-genesis-file"]),
             str(self.client_config["network-id"]),
             str(self.client_config["http-port"]),
             str(self.client_config["http-apis"]),

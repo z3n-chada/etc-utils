@@ -7,6 +7,7 @@ import ruamel.yaml as yaml
 
 from DockerWriter import create_docker_compose
 from GethGenesisWriter import create_geth_genesis
+from ConsensusGenesisConfigWriter import create_consensus_config
 
 
 def create_scenario(args):
@@ -16,13 +17,18 @@ def create_scenario(args):
     now = int(time.time())
     global_config["universal"]["now"] = now
 
-    create_geth_genesis(
-        global_config, global_config["pow-chain"]["files"]["eth1-genesis-file"]
-    )
     if args.docker:
-        create_docker_compose(global_config, "/source/docker-compose.yaml")
+        geth_genesis_out = global_config['pow-chain']['files']['docker-eth1-genesis-file']
+        docker_compose_out = global_config['docker']['docker-docker-compose-file']
+        consensus_config_out = global_config['pos-chain']['files']['docker-genesis-config']
     else:
-        create_docker_compose(global_config, 'docker-compose.yaml')
+        geth_genesis_out = global_config['pow-chain']['files']['host-eth1-genesis-file']
+        docker_compose_out = global_config['docker']['host-docker-compose-file']
+        consensus_config_out = global_config['pos-chain']['files']['host-genesis-config']
+
+    create_geth_genesis(global_config, geth_genesis_out)
+    create_docker_compose(global_config, docker_compose_out)
+    create_consensus_config(global_config, consensus_config_out)
 
 
 parser = argparse.ArgumentParser()
