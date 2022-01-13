@@ -21,3 +21,5 @@ Between runs use make clean; to build the scenario run the etc-scenario-builder 
 Creates docker-compose.yaml files to launch the testnet based on the config supplied.
 ### GethGenesisWriter.py
 Create the geth genesis file with premines, contracts etc. 
+### ConsensusGenesisConfigWriter.py
+Create the consensus client config file.
