@@ -23,7 +23,7 @@ class ClientWriter(object):
         self.image = self.client_config["image"]
         self.tag = self.client_config["tag"]
         self.network_name = self.global_config["docker"]["network-name"]
-        self.volumes = self.global_config["docker"]["volumes"]
+        self.volumes = [str(x) for x in self.global_config["docker"]["volumes"]]
 
     # inits for child classes.
     def config(self):
@@ -45,12 +45,14 @@ class ClientWriter(object):
 
     def _networking(self):
         # first calculate the ip.
+        return {self.network_name: {"ipv4_address": self.get_ip()}}
+
+    def get_ip(self):
         prefix = ".".join(self.client_config["ip-start"].split(".")[:3]) + "."
         base = int(self.client_config["ip-start"].split(".")[-1])
         skip = self.curr_node * int(self.global_config["universal"]["ip-skip"])
         ip = prefix + str(base + skip)
-
-        return {self.network_name: {"ipv4_address": ip}}
+        return ip
 
     def _entrypoint(self):
         raise Exception("over-ride this method")
@@ -78,6 +80,25 @@ class GethClientWriter(ClientWriter):
             str(self.client_config["ws-apis"]),
         ]
 
+class PrysmClientWriter(ClientWriter):
+    def __init__(self, global_config, client_config, curr_node):
+        super().__init__(
+            global_config, client_config, f"prysm-node-{curr_node}", curr_node
+        )
+        self.out = self.config()
+
+    def _entrypoint(self):
+        """
+        ./launch-prysm <datadir> <node-id> <ip-address> <pow-port>
+        TODO: bootnodes.
+        """
+        return [
+            "/data/scripts/launch-prysm.sh",
+            str(self.client_config["docker-testnet-dir"]),
+            str(self.curr_node),
+            str(self.get_ip()),
+            str(self.client_config["pow-port"]),
+        ]
 
 class DockerComposeWriter(object):
     """
@@ -108,10 +129,18 @@ class DockerComposeWriter(object):
         POW services + POS services.
         for now POW is geth.
         """
+        curr_node = 0
         geth_config = self.global_config["pow-chain"]["geth"]
         for n in range(geth_config["num-nodes"]):
-            gcw = GethClientWriter(self.global_config, geth_config, n)
+            gcw = GethClientWriter(self.global_config, geth_config, curr_node)
             self.yml["services"][gcw.name] = gcw.get_config()
+            curr_node += 1
+
+        prysm_config = self.global_config['pos-chain']['clients']['prysm']
+        for n in range(prysm_config['num-nodes']):
+            pcw = PrysmClientWriter(self.global_config, prysm_config, curr_node)
+            self.yml["services"][pcw.name] = pcw.get_config()
+            curr_node += 1
 
     def write_to_file(self, out_file):
         with open(out_file, "w") as f:
