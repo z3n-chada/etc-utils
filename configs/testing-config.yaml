@@ -112,6 +112,7 @@ pos-chain:
         preset: 'mainnet'
         genesis-delay: 100
         genesis-fork-version: 0x01000666
+        genesis-fork-name: 'phase0' # which fork ssz to create. (phase0, altair, merge...)
         forks:
             altair-fork-version: 0x02000666
             altair-fork-epoch: 4
@@ -129,3 +130,15 @@ pos-chain:
     files:
         docker-genesis-config: "/data/local_testnet/eth2-config.yaml"
         host-genesis-config: "eth2-config.yaml"
+
+        docker-genesis-ssz: "/data/local_testnet/genesis.ssz"
+        host-genesis-ssz: "genesis.ssz"
+        # required by eth2-testnet-genesis to work. This is deleted after use.
+        tmp-validator-config: "/tmp/validators.yaml"
+
+    accounts:
+        validator-mnemonic: "ocean style run case glory clip into nature guess jacket document firm fiscal hello kite disagree symptom tide net coral envelope wink render festival" 
+        withdrawl-mnemonic: "scatter supreme field crazy unveil chronic favorite middle front umbrella mutual gentle word wild economy dress whale whip method office report eternal garment parrot"
+        # these must be divide evenly.
+        total-beacon-nodes: 20
+        total-validators: 80
