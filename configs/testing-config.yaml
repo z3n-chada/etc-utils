@@ -128,6 +128,20 @@ pos-chain:
             network-id: 0x01000666
             contract-address: "0x8c594691c0e592ffa21f153a16ae41db5befcaaa"
 
+    bootnodes:
+        # only one implemented currently..
+        eth2-bootnode:
+            ip-start: "10.0.20.3"
+            image: "bootnode-clients"
+            tag: "latest"
+            num-nodes: 1
+            debug: False
+            # client specific args
+            private-key: "bc971f814d7bd37f7502cc67408c4f2c5a06e1b3d48dc041e42b5478154df1a8" # private key for the bootnode to use
+            enr-udp: 9001 #port in the enr
+            api-port: 6000 # port for web api.
+            bootnode-enr-file: "/data/local_testnet/bootnode/enr.dat" #this is only touched/modified in a docker
+
     clients:
         prysm:
             # docker specefic args

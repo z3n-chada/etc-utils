@@ -100,6 +100,25 @@ class PrysmClientWriter(ClientWriter):
             str(self.client_config["pow-port"]),
         ]
 
+class BootnodeClientWriter(ClientWriter):
+    def __init__(self, global_config, client_config, curr_node):
+        super().__init__(global_config, client_config, f"eth2-bootnode-{curr_node}", curr_node)
+        self.out = self.config()
+
+    def _entrypoint(self):
+        '''
+            ./launch-bootnode <ip-address> <enr-port> <api-port> <private-key> <enr-path>
+            launches a bootnode with a web port for fetching the enr, and 
+            fetches that enr and puts it in the local dir for other clients
+            to find..
+        '''
+        return ["/data/scripts/launch-eth2-bootnode.sh",
+                str(self.get_ip()),
+                str(self.client_config['enr-udp']),
+                str(self.client_config['api-port']),
+                str(self.client_config['private-key']),
+                str(self.client_config['bootnode-enr-file'])]
+
 class DockerComposeWriter(object):
     """
     Class to create the actual docker-compose.yaml file.
@@ -135,6 +154,13 @@ class DockerComposeWriter(object):
             gcw = GethClientWriter(self.global_config, geth_config, curr_node)
             self.yml["services"][gcw.name] = gcw.get_config()
             curr_node += 1
+
+        bootnode_config = self.global_config['pos-chain']['bootnodes']['eth2-bootnode']
+        # note this does not contribute to curr_nodes
+        for n in range(bootnode_config['num-nodes']):
+            bcw = BootnodeClientWriter(self.global_config, bootnode_config, n)
+            self.yml['services'][bcw.name] = bcw.get_config()
+
 
         prysm_config = self.global_config['pos-chain']['clients']['prysm']
         for n in range(prysm_config['num-nodes']):
