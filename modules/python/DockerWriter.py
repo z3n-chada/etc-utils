@@ -80,6 +80,7 @@ class GethClientWriter(ClientWriter):
             str(self.client_config["ws-apis"]),
         ]
 
+
 class PrysmClientWriter(ClientWriter):
     def __init__(self, global_config, client_config, curr_node):
         super().__init__(
@@ -89,35 +90,50 @@ class PrysmClientWriter(ClientWriter):
 
     def _entrypoint(self):
         """
-        ./launch-prysm <datadir> <node-id> <ip-address> <pow-port>
+        ./launch-prysm <testnet-dir> <node-dir> <web3-provider> <deposit-contract> <ip-address> <tcp-port>
         TODO: bootnodes.
         """
+        testnet_dir = str(self.client_config["docker-testnet-dir"])
+        node_dir = f"{testnet_dir}/node_{self.curr_node}"
+        geth_config = self.global_config["pow-chain"]["geth"]
+        web3_provider = f'http://{geth_config["ip-start"]}:{geth_config["http-port"]}'
+        deposit_contract = str(
+            self.global_config["pow-chain"]["contracts"]["deposit-contract-address"]
+        )
         return [
             "/data/scripts/launch-prysm.sh",
-            str(self.client_config["docker-testnet-dir"]),
-            str(self.curr_node),
+            testnet_dir,
+            node_dir,
+            web3_provider,
+            deposit_contract,
             str(self.get_ip()),
-            str(self.client_config["pow-port"]),
+            str(int(self.client_config["start-metric-port"]) + self.curr_node),
         ]
+
 
 class BootnodeClientWriter(ClientWriter):
     def __init__(self, global_config, client_config, curr_node):
-        super().__init__(global_config, client_config, f"eth2-bootnode-{curr_node}", curr_node)
+        super().__init__(
+            global_config, client_config, f"eth2-bootnode-{curr_node}", curr_node
+        )
         self.out = self.config()
 
     def _entrypoint(self):
-        '''
-            ./launch-bootnode <ip-address> <enr-port> <api-port> <private-key> <enr-path>
-            launches a bootnode with a web port for fetching the enr, and 
-            fetches that enr and puts it in the local dir for other clients
-            to find..
-        '''
-        return ["/data/scripts/launch-eth2-bootnode.sh",
-                str(self.get_ip()),
-                str(self.client_config['enr-udp']),
-                str(self.client_config['api-port']),
-                str(self.client_config['private-key']),
-                str(self.client_config['bootnode-enr-file'])]
+        """
+        ./launch-bootnode <ip-address> <enr-port> <api-port> <private-key> <enr-path>
+        launches a bootnode with a web port for fetching the enr, and
+        fetches that enr and puts it in the local dir for other clients
+        to find..
+        """
+        return [
+            "/data/scripts/launch-eth2-bootnode.sh",
+            str(self.get_ip()),
+            str(self.client_config["enr-udp"]),
+            str(self.client_config["api-port"]),
+            str(self.client_config["private-key"]),
+            str(self.client_config["bootnode-enr-file"]),
+        ]
+
 
 class DockerComposeWriter(object):
     """
@@ -155,16 +171,15 @@ class DockerComposeWriter(object):
             self.yml["services"][gcw.name] = gcw.get_config()
             curr_node += 1
 
-        bootnode_config = self.global_config['pos-chain']['bootnodes']['eth2-bootnode']
+        bootnode_config = self.global_config["pos-chain"]["bootnodes"]["eth2-bootnode"]
         # note this does not contribute to curr_nodes
-        for n in range(bootnode_config['num-nodes']):
+        for n in range(bootnode_config["num-nodes"]):
             bcw = BootnodeClientWriter(self.global_config, bootnode_config, n)
-            self.yml['services'][bcw.name] = bcw.get_config()
+            self.yml["services"][bcw.name] = bcw.get_config()
 
-
-        prysm_config = self.global_config['pos-chain']['clients']['prysm']
-        for n in range(prysm_config['num-nodes']):
-            pcw = PrysmClientWriter(self.global_config, prysm_config, curr_node)
+        prysm_config = self.global_config["pos-chain"]["clients"]["prysm"]
+        for n in range(prysm_config["num-nodes"]):
+            pcw = PrysmClientWriter(self.global_config, prysm_config, n)
             self.yml["services"][pcw.name] = pcw.get_config()
             curr_node += 1
 

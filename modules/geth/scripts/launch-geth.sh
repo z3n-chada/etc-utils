@@ -12,6 +12,8 @@ HTTP_APIS=$5
 WS_PORT=$6
 WS_APIS=$7
 
+echo "testnet-password" > /data/geth-account-passwords.txt
+
 geth init \
     --datadir $GETH_DATA_DIR \
     $GENESIS_CONFIG
@@ -25,4 +27,8 @@ geth \
     --nodiscover \
     --miner.etherbase 0x1000000000000000000000000000000000000000 \
     --datadir $GETH_DATA_DIR
+
+# --keystore /data/geth-keystores/ \
+# --unlock "0x51Dd070D1f6f8dB48CA5b0E47D7e899aea6b1AF5" --password /data/geth-account-passwords.txt --mine \
+# --allow-insecure-unlock \
 

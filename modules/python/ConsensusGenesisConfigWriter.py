@@ -3,7 +3,8 @@ from ruamel import yaml
 class ConsensusConfigWriter(object):
     def __init__(self, global_config):
         cc = global_config['pos-chain']['config'] # consensus config
-        preset = cc['preset']
+        preset = str(cc['preset'])
+        print(preset)
         pc = global_config['universal']['consensus-presets'][preset] #preset config
         self.yml = f"""
 PRESET_BASE: {cc['preset']}
