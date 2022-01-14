@@ -166,6 +166,8 @@ class LighthouseTestnetDirectoryGenerator(TestnetDirectoryGenerator):
         # create local geneis ssz and config.yaml
         shutil.copy(src=self.genesis_ssz, dst=str(self.testnet_dir) + "/genesis.ssz"),
         shutil.copy(src=self.config, dst=str(self.testnet_dir) + "/config.yaml")
+        with open(str(self.testnet_dir)+"/deploy_block.txt", 'w') as f:
+            f.write(str(0))
         self.generate_all_validators(self.validator_store_dir)
         # split up into subdirs.
         divisor = int(self.num_validators / self.num_nodes)

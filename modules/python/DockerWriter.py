@@ -111,6 +111,28 @@ class PrysmClientWriter(ClientWriter):
         ]
 
 
+class LighthouseClientWriter(ClientWriter):
+    def __init__(self, global_config, client_config, curr_node):
+        super().__init__(
+            global_config, client_config, f"lighthouse-node-{curr_node}", curr_node
+        )
+        self.out = self.config()
+
+    def _entrypoint(self):
+        testnet_dir = str(self.client_config["docker-testnet-dir"])
+        node_dir = f"{testnet_dir}/node_{self.curr_node}"
+        geth_config = self.global_config["pow-chain"]["geth"]
+        web3_provider = f'http://{geth_config["ip-start"]}:{geth_config["http-port"]}'
+
+        return [
+            "/data/scripts/launch-lighthouse.sh",
+            testnet_dir,
+            node_dir,
+            web3_provider,
+            str(int(self.client_config["start-metric-port"]) + self.curr_node),
+        ]
+
+
 class BootnodeClientWriter(ClientWriter):
     def __init__(self, global_config, client_config, curr_node):
         super().__init__(
@@ -181,6 +203,12 @@ class DockerComposeWriter(object):
         for n in range(prysm_config["num-nodes"]):
             pcw = PrysmClientWriter(self.global_config, prysm_config, n)
             self.yml["services"][pcw.name] = pcw.get_config()
+            curr_node += 1
+
+        lighthouse_config = self.global_config["pos-chain"]["clients"]["lighthouse"]
+        for n in range(lighthouse_config["num-nodes"]):
+            lhcw = LighthouseClientWriter(self.global_config, lighthouse_config, n)
+            self.yml["services"][lhcw.name] = lhcw.get_config()
             curr_node += 1
 
     def write_to_file(self, out_file):
