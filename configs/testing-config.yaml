@@ -1,3 +1,6 @@
+# testing config file that maintains all possible configs.
+# Commented configs are yet to be implemented unless otherwise
+# specified.
 docker:
     network-name: "local-testnet"
     ip-subnet: "10.0.20.0/16"
@@ -55,7 +58,7 @@ universal:
 
 pow-chain:
 
-    seconds-per-eth1-block: 14 #TODO: implement this
+    seconds-per-eth1-block: 14
 
     geth:
         # values for geth-client docker.
@@ -92,6 +95,12 @@ pow-chain:
             "m/44'/60'/0'/0/1" : "10000"
             "m/44'/60'/0'/0/2" : "10000"
             "m/44'/60'/0'/0/3" : "10000"
+
+    clique:
+        enabled: True
+        #see the scripts folder to dump necessary files for keys
+        # 0x stripped.
+        signer: "51Dd070D1f6f8dB48CA5b0E47D7e899aea6b1AF5"
 
     files:
         docker-eth1-genesis-file: "/data/eth1-genesis.json" # wrt to docker container.
@@ -153,7 +162,7 @@ pos-chain:
             debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
             # client specific args that can't be derrived from this config file.
             start-metric-port: 9000
-            pow-port: 8545
+            pow-port: 8545 # TODO
             docker-testnet-dir: "/data/local_testnet/prysm"
             host-testnet-dir: "shared-data/local_testnet/prysm"
             validator-password: "testnet-password"
@@ -183,18 +192,19 @@ pos-chain:
             #    pow-port: 8545
             #    docker-testnet-dir: "/data/local_testnet/nimbus"
             #    host-testnet-dir: "shared-data/local_testnet/nimbus"
-            #lighthouse:
-            #    # docker specefic args
-            #    image: "lighthouse-client"
-            #    tag: "latest"
-            #    num-nodes: 0
-            #    debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
-            #    ip-start: "10.0.20.7"
-            #    # client specific args that can't be derrived from this config file.
-            #    start-metric-port: 9000
-            #    pow-port: 8545
-            #    docker-testnet-dir: "/data/local_testnet/lighthouse"
-            #    host-testnet-dir: "shared-data/local_testnet/lighthouse"
+        lighthouse:
+            # docker specefic args
+            image: "lighthouse-client"
+            tag: "latest"
+            num-nodes: 0 
+            debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
+            ip-start: "10.0.20.7"
+            # client specific args that can't be derrived from this config file.
+            debug-level: "debug"
+            start-metric-port: 8000
+            start-p2p-port: 9000
+            docker-testnet-dir: "/data/local_testnet/lighthouse"
+            host-testnet-dir: "shared-data/local_testnet/lighthouse"
             #lodestar:
             #    # docker specefic args
             #    image: "lodestar-client"
