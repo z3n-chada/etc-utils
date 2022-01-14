@@ -1,22 +1,5 @@
 #!/bin/bash
 
-sleep 10 # wait for bootnode to come up
-
-# lighthouse \
-# 	--debug-level debug \
-# 	bn \
-# 	--datadir $NODE_DATADIR \
-# 	--testnet-dir $TESTNET_DIR \
-# 	--staking \
-#     --boot-nodes "$bootnode_enr" \
-#     --enr-address "$TESTNET_DIR/boot_enr.yaml" \
-#     --enr-udp-port $TCP_PORT \
-#     --enr-tcp-port $TCP_PORT \
-#     --port $TCP_PORT \
-# 	--http-port $METRIC_PORT \
-# 	--eth1-endpoints http://10.0.20.2:8545 \
-# 	--http-address 0.0.0.0 \
-# 	--http-allow-origin "*"
 
 DEBUG_LEVEL=$1 
 TESTNET_DIR=$2
@@ -26,8 +9,12 @@ API_PORT=$5
 IP_ADDR=$6
 ETH1_ENDPOINT=$7
 
-bootnode_enr=`cat $TESTNET_DIR/../bootnode/enr.dat`
-echo "- $bootnode_enr" > $TESTNET_DIR/boot_enr.yaml
+sleep 10 # wait for bootnode to come up
+
+if [ -f $TESTNET_DIR/boot_enr.yaml ]; then
+    bootnode_enr=`cat $TESTNET_DIR/../bootnode/enr.dat`
+    echo "- $bootnode_enr" > $TESTNET_DIR/boot_enr.yaml
+fi
 
 lighthouse \
 	--datadir $NODE_DIR \
