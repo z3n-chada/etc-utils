@@ -57,7 +57,9 @@ class GethGenesisConfig(object):
         self.global_config = global_config
         self.genesis_config = global_config["pow-chain"]["geth-genesis"]
 
-        genesis_time = str(global_config['universal']['now'] + self.genesis_config["genesis-delay"])
+        genesis_time = str(
+            global_config["universal"]["now"] + self.genesis_config["genesis-delay"]
+        )
 
         self.genesis = {
             "config": self._genesis_config(),
@@ -75,6 +77,9 @@ class GethGenesisConfig(object):
 
         self._fill_all_precompiles()
         self._fill_config_premines()
+
+        if self.global_config["pow-chain"]["clique"]["enabled"]:
+            self._configure_clique()
 
         if pre_deploy_contract:
             dca = self.global_config["pow-chain"]["contracts"][
@@ -115,6 +120,15 @@ class GethGenesisConfig(object):
                 mnemonic, account_path=acc, passphrase=password
             )
             self.genesis["alloc"][acct.address] = {"balance": premines[acc] + "0" * 18}
+
+    def _configure_clique(self):
+        signer = self.global_config["pow-chain"]["clique"]["signer"]
+        extradata = f"0x{'00'*32}{signer}{'00'*65}"
+        self.genesis["extradata"] = extradata
+        self.genesis["config"]["clique"] = {
+            "period": self.global_config["pow-chain"]["seconds-per-eth1-block"],
+            "epoch": 30000,
+        }
 
     def write_to_file(self, out_file):
         with open(out_file, "w") as f:

@@ -25,10 +25,10 @@ geth \
     --http.port $HTTP_PORT \
     --http.addr 0.0.0.0 \
     --nodiscover \
-    --miner.etherbase 0x1000000000000000000000000000000000000000 \
+    --keystore /data/geth-keystores/ \
+    --unlock "0x51Dd070D1f6f8dB48CA5b0E47D7e899aea6b1AF5" --password /data/geth-account-passwords.txt --mine \
+    --allow-insecure-unlock \
     --datadir $GETH_DATA_DIR
 
-# --keystore /data/geth-keystores/ \
-# --unlock "0x51Dd070D1f6f8dB48CA5b0E47D7e899aea6b1AF5" --password /data/geth-account-passwords.txt --mine \
-# --allow-insecure-unlock \
 
+#--miner.etherbase 0x1000000000000000000000000000000000000000 \

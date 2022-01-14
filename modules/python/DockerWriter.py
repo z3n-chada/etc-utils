@@ -119,6 +119,10 @@ class LighthouseClientWriter(ClientWriter):
         self.out = self.config()
 
     def _entrypoint(self):
+        """
+        DEBUG_LEVEL TESTNET_DIR NODE_DIR P2P_PORT API_PORT
+        IP_ADDR ETH1_ENDPOINT
+        """
         testnet_dir = str(self.client_config["docker-testnet-dir"])
         node_dir = f"{testnet_dir}/node_{self.curr_node}"
         geth_config = self.global_config["pow-chain"]["geth"]
@@ -126,10 +130,13 @@ class LighthouseClientWriter(ClientWriter):
 
         return [
             "/data/scripts/launch-lighthouse.sh",
+            str(self.client_config["debug-level"]),
             testnet_dir,
             node_dir,
+            str(self.client_config["start-p2p-port"] + self.curr_node),
+            str(self.client_config["start-metric-port"] + self.curr_node),
+            str(self.get_ip()),
             web3_provider,
-            str(int(self.client_config["start-metric-port"]) + self.curr_node),
         ]
 
 
