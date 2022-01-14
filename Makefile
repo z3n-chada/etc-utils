@@ -8,11 +8,13 @@ base:
 	cp modules/bootnode/scripts/* shared-data/scripts/
 	cp modules/geth/data/* shared-data/geth-keystores/
 	cp modules/prysm/scripts/* shared-data/scripts/
+	cp modules/lighthouse/scripts/* shared-data/scripts/
 
 client-dockers:
 	cd modules/geth/docker && ./build_docker.sh
 	cd modules/bootnode/docker && ./build_docker.sh
 	cd modules/prysm/docker && ./build_docker.sh
+	cd modules/lighthouse/docker && ./build_docker.sh
 
 docker:
 	cd docker && ./build_docker.sh

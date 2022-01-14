@@ -1,12 +1,13 @@
-from ruamel import yaml
 import json
+
+from ruamel import yaml
 from web3.auto import w3
 
 w3.eth.account.enable_unaudited_hdwallet_features()
 
-'''
+"""
     generate keyfiles for geth genesis..
-'''
+"""
 
 if __name__ == "__main__":
     import argparse
@@ -26,8 +27,8 @@ if __name__ == "__main__":
         acct = w3.eth.account.from_mnemonic(
             mnemonic, account_path=acc, passphrase=password
         )
-        print(acct.address)
-        print(acct.privateKey)
+        print(f"address: {acct.address}")
+        print(f"private: {acct.privateKey.hex()}")
         keyfile = acct.encrypt(password)
-        with open(f'keyfile-{acct.address}.key', 'w') as f:
+        with open(f"keyfile-{acct.address}.key", "w") as f:
             json.dump(keyfile, f)

@@ -8,6 +8,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+from itertools import zip_longest
 
 from ruamel import yaml
 
@@ -50,7 +51,7 @@ class TestnetDirectoryGenerator(object):
         # of the typical list format
         cmd = (
             f"eth2-val-tools keystores --out-loc {target_dir} "
-            + f"--source-min 0 --source-max {self.num_validators-1} "
+            + f"--source-min 0 --source-max {self.num_validators} "
             + f'--source-mnemonic "{self.mnemonic}"'
         )
         if password is not None:
@@ -68,7 +69,7 @@ class TestnetDirectoryGenerator(object):
             val_dir = f"node_{x}"
             cmd = (
                 f"eth2-val-tools keystores --out-loc {target_dir}/{val_dir} "
-                + f"--source-min 0 --source-max {self.num_validators-1} "
+                + f"--source-min 0 --source-max {self.num_validators} "
                 + f'--source-mnemonic "{self.mnemonic}"'
             )
             if password is not None:
@@ -139,21 +140,89 @@ class PrysmTestnetDirectoryGenerator(TestnetDirectoryGenerator):
         # done now clean up..
         shutil.rmtree(str(self.testnet_dir) + "/validators/")
 
+
 def create_prysm_testnet_dirs(global_config, docker):
     pdg = PrysmTestnetDirectoryGenerator(global_config, docker=docker)
     pdg.generate_testnet_dir()
 
+
+class LighthouseTestnetDirectoryGenerator(TestnetDirectoryGenerator):
+    def __init__(self, global_config, docker=True):
+        super().__init__(global_config)
+        if docker:
+            self.testnet_dir = pathlib.Path(
+                self.global_config["pos-chain"]["clients"]["lighthouse"][
+                    "docker-testnet-dir"
+                ]
+            )
+        else:
+            self.testnet_dir = pathlib.Path(
+                self.global_config["pos-chain"]["clients"]["lighthouse"][
+                    "host-testnet-dir"
+                ]
+            )
+        self.validator_store_dir = pathlib.Path(str(self.testnet_dir) + "/validators/")
+        self.testnet_dir.mkdir()
+
+    def generate_testnet_dir(self):
+        print("Creating lighthouse testnet directory...")
+        # create local geneis ssz and config.yaml
+        shutil.copy(src=self.genesis_ssz, dst=str(self.testnet_dir) + "/genesis.ssz"),
+        shutil.copy(src=self.config, dst=str(self.testnet_dir) + "/config.yaml")
+        with open(str(self.testnet_dir) + "/deploy_block.txt", "w") as f:
+            f.write(str(0))
+        self.generate_all_validators(self.validator_store_dir)
+        # split up into subdirs.
+        divisor = int(self.num_validators / self.num_nodes)
+        curr_offset = 0
+        print("Organizing lighthouse testnet beacon node directories..")
+        # use secrets to get all the keys.
+        all_key_paths = pathlib.Path(str(self.validator_store_dir) + "/secrets/").glob(
+            "*"
+        )
+        sub_dir_keys = zip_longest(*[iter(all_key_paths)] * divisor)
+        for ndx, keys in enumerate(sub_dir_keys):
+            node_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}/")
+            node_dir.mkdir()
+            secrets_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}/secrets/")
+            node_key_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}/keys/")
+            secrets_dir.mkdir()
+            node_key_dir.mkdir()
+            for k in keys:
+                # validators then secrets
+                src_key_dir = str(self.validator_store_dir) + f"/keys/{k.name}"
+                dst_key_dir = str(node_key_dir) + f"/{k.name}"
+                shutil.copytree(src_key_dir, dst_key_dir)
+                dst_secret_key = str(secrets_dir) + f"/{k.name}"
+                shutil.copy(k, dst_secret_key)
+        shutil.rmtree(str(self.testnet_dir) + "/validators/")
+
+
+def create_lighthouse_testnet_dirs(global_config, docker):
+    lhdg = LighthouseTestnetDirectoryGenerator(global_config, docker=docker)
+    lhdg.generate_testnet_dir()
+
+
 def create_client_testnet_dir(global_config, client, docker):
-    if client == 'prysm':
+    if client == "prysm":
         create_prysm_testnet_dirs(global_config, docker)
+    elif client == "lighthouse":
+        create_lighthouse_testnet_dirs(global_config, docker)
     else:
-        raise Exception(f"Unimplented client label for testnet directory creation ({client})")
+        raise Exception(
+            f"Unimplented client label for testnet directory creation ({client})"
+        )
+
 
 def create_testnet_dirs(global_config, docker):
     # tdg = TestnetDirectoryGenerator(global_config)
     # tdg.generate_validators(out_dir)
-    pdg = PrysmTestnetDirectoryGenerator(global_config, docker=docker)
-    pdg.generate_testnet_dir()
+
+    # pdg = PrysmTestnetDirectoryGenerator(global_config, docker=docker)
+    # pdg.generate_testnet_dir()
+
+    lhdg = LighthouseTestnetDirectoryGenerator(global_config, docker=docker)
+    lhdg.generate_testnet_dir()
 
 
 if __name__ == "__main__":
