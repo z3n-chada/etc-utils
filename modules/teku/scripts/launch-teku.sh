@@ -42,7 +42,7 @@ teku --network "$TESTNET_DIR/config.yaml" \
     --metrics-host-allowlist="*" \
     --metrics-host-allowlist="*" &
 
-sleep 5
+sleep 15
 
 teku vc \
     --network "$TESTNET_DIR/config.yaml" \
