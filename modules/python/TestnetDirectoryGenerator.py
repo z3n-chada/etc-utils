@@ -59,17 +59,21 @@ class TestnetDirectoryGenerator(object):
         subprocess.run(cmd, shell=True)
 
     def generate_piecewise_validators(self, target_dir, password=None):
+        '''
+            TODO this needs to be fixed for when we start implementing multi
+            client networks. This is beacon centric not client centric
+        '''
         # similiar to all validators but breaks up the output into multiple folders
         if self.num_validators % self.num_nodes != 0:
             # TODO: don't be lazy.
             raise Exception("validators must evenly divide nodes!")
         divisor = int(self.num_validators / self.num_nodes)
         curr_offset = 0
-        for x in range(divisor + 1):
+        for x in range(self.num_nodes):
             val_dir = f"node_{x}"
             cmd = (
                 f"eth2-val-tools keystores --out-loc {target_dir}/{val_dir} "
-                + f"--source-min 0 --source-max {self.num_validators} "
+                + f"--source-min {curr_offset} --source-max {curr_offset + divisor} "
                 + f'--source-mnemonic "{self.mnemonic}"'
             )
             if password is not None:
@@ -110,6 +114,7 @@ class PrysmTestnetDirectoryGenerator(TestnetDirectoryGenerator):
         ]
         self.testnet_dir.mkdir()
 
+    # TODO: this is now invalid due to chances in the piecewise validator routine above
     def generate_testnet_dir(self):
         print("Creating prysm testnet directory...")
         # create local geneis ssz and config.yaml
@@ -202,12 +207,59 @@ def create_lighthouse_testnet_dirs(global_config, docker):
     lhdg = LighthouseTestnetDirectoryGenerator(global_config, docker=docker)
     lhdg.generate_testnet_dir()
 
+class TekuTestnetDirectoryGenerator(TestnetDirectoryGenerator):
+    def __init__(self, global_config, client_config, docker=True):
+        super().__init__(global_config)
+        self.client_config = client_config
+        if docker:
+            self.testnet_dir = pathlib.Path(
+                self.global_config["pos-chain"]["clients"]["teku"][
+                    "docker-testnet-dir"
+                ]
+            )
+        else:
+            self.testnet_dir = pathlib.Path(
+                self.global_config["pos-chain"]["clients"]["teku"][
+                    "host-testnet-dir"
+                ]
+            )
+        self.validator_store_dir = pathlib.Path(str(self.testnet_dir) + "/validators/")
+        self.testnet_dir.mkdir()
+
+    def generate_testnet_dir(self):
+        print("Creating teku testnet directory...")
+        # create local geneis ssz and config.yaml
+        shutil.copy(src=self.genesis_ssz, dst=str(self.testnet_dir) + "/genesis.ssz"),
+        shutil.copy(src=self.config, dst=str(self.testnet_dir) + "/config.yaml")
+        # with open(str(self.testnet_dir) + "/deploy_block.txt", "w") as f:
+        #     f.write(str(0))
+        self.generate_piecewise_validators(self.validator_store_dir, password=None)
+        # # split up into subdirs.
+        divisor = int(self.num_validators / self.num_nodes)
+        curr_offset = 0
+        print("Organizing teku testnet beacon node directories..")
+        # use secrets to get all the keys.
+        # TODO: this is very clunky for teku, fix this to be better; just want to get a test up.
+        for ndx in range(self.client_config['num-nodes']):
+            node_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}")
+            node_dir.mkdir()
+            src_dir = pathlib.Path(str(self.validator_store_dir) + f"/node_{ndx}")
+            shutil.copytree(str(src_dir) + "/teku-keys", str(node_dir) + "/keys")
+            shutil.copytree(str(src_dir) + "/teku-secrets", str(node_dir) + "/secrets")
+        
+        shutil.rmtree(str(self.testnet_dir) + "/validators/")
+
 
 def create_client_testnet_dir(global_config, client, docker):
     if client == "prysm":
         create_prysm_testnet_dirs(global_config, docker)
     elif client == "lighthouse":
         create_lighthouse_testnet_dirs(global_config, docker)
+    elif client == "teku":
+        # TODO we need to fix this for multiple client listings.
+        client_config = global_config['pos-chain']['clients']['teku']
+        ttdg = TekuTestnetDirectoryGenerator(global_config, client_config, docker)
+        ttdg.generate_testnet_dir()
     else:
         raise Exception(
             f"Unimplented client label for testnet directory creation ({client})"
