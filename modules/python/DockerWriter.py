@@ -140,6 +140,40 @@ class LighthouseClientWriter(ClientWriter):
         ]
 
 
+class TekuClientWriter(ClientWriter):
+    def __init__(self, global_config, client_config, curr_node):
+        super().__init__(
+            global_config, client_config, f"teku-node-{curr_node}", curr_node
+        )
+        self.out = self.config()
+
+    def _entrypoint(self):
+        """
+        DEBUG_LEVEL=$1
+        TESTNET_DIR=$2
+        NODE_DIR=$3
+        P2P_PORT=$4
+        METRIC_PORT=$5
+        REST_PORT=$6
+        ETH1_ENDPOINT=$7
+        """
+        testnet_dir = str(self.client_config["docker-testnet-dir"])
+        node_dir = f"{testnet_dir}/node_{self.curr_node}"
+        geth_config = self.global_config["pow-chain"]["geth"]
+        web3_provider = f'http://{geth_config["ip-start"]}:{geth_config["http-port"]}'
+        return [
+            "/data/scripts/launch-teku.sh",
+            str(self.client_config["debug-level"]),
+            testnet_dir,
+            node_dir,
+            str(self.client_config["start-p2p-port"] + self.curr_node),
+            str(self.client_config["start-metric-port"] + self.curr_node),
+            str(self.client_config["start-rest-port"] + self.curr_node),
+            str(self.get_ip()),
+            web3_provider,
+        ]
+
+
 class BootnodeClientWriter(ClientWriter):
     def __init__(self, global_config, client_config, curr_node):
         super().__init__(
@@ -172,6 +206,11 @@ class DockerComposeWriter(object):
     def __init__(self, global_config):
         self.global_config = global_config
         self.yml = self._base()
+        self.client_writers = {
+            "prysm": PrysmClientWriter,
+            "teku": TekuClientWriter,
+            "lighthouse": LighthouseClientWriter,
+        }
 
     def _base(self):
         return {
@@ -206,6 +245,16 @@ class DockerComposeWriter(object):
             bcw = BootnodeClientWriter(self.global_config, bootnode_config, n)
             self.yml["services"][bcw.name] = bcw.get_config()
 
+        for client in self.global_config["pos-chain"]["clients"]:
+            client_config = self.global_config["pos-chain"]["clients"][client]
+            for n in range(client_config["num-nodes"]):
+                client_writer = self.client_writers[client](
+                    self.global_config, client_config, n
+                )
+                self.yml["services"][client_writer.name] = client_writer.get_config()
+                curr_node += 1
+
+        """
         prysm_config = self.global_config["pos-chain"]["clients"]["prysm"]
         for n in range(prysm_config["num-nodes"]):
             pcw = PrysmClientWriter(self.global_config, prysm_config, n)
@@ -217,6 +266,13 @@ class DockerComposeWriter(object):
             lhcw = LighthouseClientWriter(self.global_config, lighthouse_config, n)
             self.yml["services"][lhcw.name] = lhcw.get_config()
             curr_node += 1
+
+        teku_config = self.global_config["pos-chain"]["clients"]["teku"]
+        for n in range(teku_config["num-nodes"]):
+            tcw = TekuClientWriter(self.global_config, teku_config, n)
+            self.yml["services"][tcw.name] = tcw.get_config()
+            curr_node += 1
+        """
 
     def write_to_file(self, out_file):
         with open(out_file, "w") as f:

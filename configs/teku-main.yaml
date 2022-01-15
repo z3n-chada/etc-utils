@@ -1,0 +1,185 @@
+# Temporary drop in for teku testing.
+# Commented configs are yet to be implemented unless otherwise
+# specified.
+docker:
+    network-name: "local-testnet"
+    ip-subnet: "10.0.20.0/16"
+    volumes: ['./shared-data:/data/']
+    # for writing the docker-compose.yaml
+    docker-docker-compose-file:  "/source/docker-compose.yaml" #wrt to docker config
+    host-docker-compose-file: "docker-compose.yaml"
+
+# do not modify these unless you know what your are doing, 
+# if the value is 0xdeadbeef its populated dynamically when making
+# scenarios. (populated in create_scenarios.py)
+universal:
+    now: 0xdeadbeef
+    ip-skip: 5 # should be equal to the number of possible clients
+    merge-testnet: False #TODO: will probably require some renaming and moving things around.
+
+    consensus-presets:
+        #the mainnet preset we use
+        mainnet:
+            max-committees-per-slot: 64
+            target-committee-size: 128
+            shuffle-round-count: 90
+            min-genesis-active-validator-count: 64 # custom 
+            eth1-follow-distance: 2048
+            seconds-per-slot: 12
+            slots-per-epoch: 32
+            epochs-per-eth2-voting-period: 64
+            slots-per-historical-root: 8192
+            shard-committee-period: 256
+            epochs-per-historical-vector: 65536
+            epochs-per-slashings-vector: 8192
+            inactivity-penalty-quotient: 67108864
+            min-slashing-penalty-quotient: 128
+            proportional-slashing-multiplier: 1
+            churn-limit-quotient: 65536
+
+        # the minimal preset we use
+        minimal:
+            max-committees-per-slot: 4
+            target-committee-size: 4
+            shuffle-round-count: 10
+            min-genesis-active-validator-count: 8 # custom 
+            eth1-follow-distance: 16
+            seconds-per-slot: 12
+            slots-per-epoch: 8
+            epochs-per-eth2-voting-period: 4
+            slots-per-historical-root: 64
+            shard-committee-period: 64
+            epochs-per-historical-vector: 64
+            epochs-per-slashings-vector: 64
+            inactivity-penalty-quotient: 33554432
+            min-slashing-penalty-quotient: 64
+            proportional-slashing-multiplier: 2
+            churn-limit-quotient: 32
+
+pow-chain:
+
+    seconds-per-eth1-block: 14
+
+    geth:
+        # values for geth-client docker.
+        ip-start: "10.0.20.2"
+        image: "geth-client"
+        tag: "latest"
+        num-nodes: 1
+        debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
+        # arguments for running geth.
+        network-id: 0x01000666
+        http-port: 8545
+        ws-port: 8546
+        http-apis: "net,eth,web3,personal"
+        ws-apis: "net,eth,web3,personal"
+
+    geth-genesis:
+        genesis-delay: 10 # seconds from now for genesis timestamp.
+        chain-id: 0x01000666
+        homesteadBlock: 0
+        eip150Block: 0
+        eip155Block: 0
+        eip158Block: 0
+        byzantiumBlock: 0
+        constantinopleBlock: 0
+        petersburgBlock: 0
+        istanbulBlock: 0
+        berlinBlock: 0
+
+    accounts:
+        eth1-account-mnemonic: "cat swing flag economy stadium alone churn speed unique patch report train"
+        eth1-passphrase: "testnet-password"
+        eth1-premine:
+            "m/44'/60'/0'/0/0" : "10000"
+            "m/44'/60'/0'/0/1" : "10000"
+            "m/44'/60'/0'/0/2" : "10000"
+            "m/44'/60'/0'/0/3" : "10000"
+
+    clique:
+        enabled: True
+        #see the scripts folder to dump necessary files for keys
+        # 0x stripped.
+        signer: "51Dd070D1f6f8dB48CA5b0E47D7e899aea6b1AF5"
+
+    files:
+        docker-eth1-genesis-file: "/data/eth1-genesis.json" # wrt to docker container.
+        host-eth1-genesis-file: "shared-data/eth1-genesis.json" # wrt to docker container.
+        #eth1-genesis-file: "eth1-genesis.json" # wrt to docker container.
+        docker-geth-data-dir: "/data/local_testnet/geth/"
+        host-geth-data-dir: "shared-data/local_testnet/geth/"
+
+    contracts:
+        deposit-contract-address: "0x8c594691c0e592ffa21f153a16ae41db5befcaaa"
+
+
+pos-chain:
+    # these are left here as reference. Be careful tweaking them as some
+    # clients require a recompile for changes to the config.
+
+    config:
+        preset: 'mainnet'
+        genesis-delay: 100
+        genesis-fork-version: 0x01000666
+        genesis-fork-name: 'phase0' # which fork ssz to create. (phase0, altair, merge...)
+        forks:
+            altair-fork-version: 0x02000666
+            altair-fork-epoch: 4
+
+            merge-fork-version: 0x03000666
+            merge-fork-epoch: 18446744073709551615
+
+            sharding-fork-version: 0x04000666
+            sharding-fork-epoch: 18446744073709551615
+
+        deposit:
+            chain-id: 0x01000666
+            network-id: 0x01000666
+            contract-address: "0x8c594691c0e592ffa21f153a16ae41db5befcaaa"
+
+    bootnodes:
+        # only one implemented currently..
+        eth2-bootnode:
+            ip-start: "10.0.20.3"
+            image: "bootnode-clients"
+            tag: "latest"
+            num-nodes: 1
+            debug: False
+            # client specific args
+            private-key: "bc971f814d7bd37f7502cc67408c4f2c5a06e1b3d48dc041e42b5478154df1a8" # private key for the bootnode to use
+            enr-udp: 9001 #port in the enr
+            api-port: 6000 # port for web api.
+            bootnode-enr-file: "/data/local_testnet/bootnode/enr.dat" #this is only touched/modified in a docker
+
+    clients:
+        teku:
+            # docker specefic args
+            image: "teku-client"
+            tag: "latest"
+            num-nodes: 20
+            debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
+            ip-start: "10.0.20.6"
+            # client specific args that can't be derrived from this config file.
+            debug-level: "debug"
+            start-metric-port: 9000
+            start-p2p-port: 8000
+            start-rest-port: 4000
+            pow-port: 8545
+            docker-testnet-dir: "/data/local_testnet/teku"
+            host-testnet-dir: "shared-data/local_testnet/teku"
+
+    files:
+        docker-genesis-config: "/data/local_testnet/eth2-config.yaml"
+        host-genesis-config: "eth2-config.yaml"
+
+        docker-genesis-ssz: "/data/local_testnet/genesis.ssz"
+        host-genesis-ssz: "genesis.ssz"
+        # required by eth2-testnet-genesis to work. This is deleted after use.
+        tmp-validator-config: "/tmp/validators.yaml"
+
+    accounts:
+        validator-mnemonic: "ocean style run case glory clip into nature guess jacket document firm fiscal hello kite disagree symptom tide net coral envelope wink render festival" 
+        withdrawl-mnemonic: "scatter supreme field crazy unveil chronic favorite middle front umbrella mutual gentle word wild economy dress whale whip method office report eternal garment parrot"
+        # these must be divide evenly.
+        total-beacon-nodes: 20
+        total-validators: 80
