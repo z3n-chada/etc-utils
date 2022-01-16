@@ -13,66 +13,38 @@ from itertools import zip_longest
 from ruamel import yaml
 
 
-class TestnetDirectoryGenerator(object):
-    """
-    depends on eth2-val-tools config docker ships with this already in
-    its path.
-    """
-
+class TestnetDirectoryManager(object):
     def __init__(self, global_config, docker=True):
+        self.docker = docker
         self.global_config = global_config
-        self.num_nodes = int(
+        self.total_nodes = int(
             self.global_config["pos-chain"]["accounts"]["total-beacon-nodes"]
         )
-        self.num_validators = int(
+        self.total_validators = int(
             self.global_config["pos-chain"]["accounts"]["total-validators"]
         )
+
         self.mnemonic = self.global_config["pos-chain"]["accounts"][
             "validator-mnemonic"
         ]
-        if docker:
-            self.genesis_ssz = self.global_config["pos-chain"]["files"][
-                "docker-genesis-ssz"
-            ]
-            self.config = self.global_config["pos-chain"]["files"][
-                "docker-genesis-config"
-            ]
-        else:
-            self.genesis_ssz = self.global_config["pos-chain"]["files"][
-                "host-genesis-ssz"
-            ]
-            self.config = self.global_config["pos-chain"]["files"][
-                "host-genesis-config"
-            ]
 
-    def generate_all_validators(self, target_dir, password=None):
-        # is password is none don't use.
-        # python is a hassle with quoted args so use a str instead
-        # of the typical list format
-        cmd = (
-            f"eth2-val-tools keystores --out-loc {target_dir} "
-            + f"--source-min 0 --source-max {self.num_validators} "
-            + f'--source-mnemonic "{self.mnemonic}"'
-        )
-        if password is not None:
-            cmd += f' --prysm-pass "{password}"'
-        subprocess.run(cmd, shell=True)
+        self.client_generators = {"prysm": PrysmTestnetGenerator}
 
-    def generate_piecewise_validators(self, target_dir, password=None):
-        '''
-            TODO this needs to be fixed for when we start implementing multi
-            client networks. This is beacon centric not client centric
-        '''
-        # similiar to all validators but breaks up the output into multiple folders
-        if self.num_validators % self.num_nodes != 0:
-            # TODO: don't be lazy.
-            raise Exception("validators must evenly divide nodes!")
-        divisor = int(self.num_validators / self.num_nodes)
-        curr_offset = 0
-        for x in range(self.num_nodes):
+        self.generated_validators = {}
+
+    # used to generate the
+    def _generate_validator_stores(
+        self, start, num_nodes, num_validators, out_dir, password=None, metadata="None"
+    ):
+        divisor = int(num_validators / num_nodes)
+        if num_validators % num_nodes != 0:
+            raise Exception("Validators must evenly divide nodes")
+
+        curr_offset = start
+        for x in range(num_nodes):
             val_dir = f"node_{x}"
             cmd = (
-                f"eth2-val-tools keystores --out-loc {target_dir}/{val_dir} "
+                f"eth2-val-tools keystores --out-loc {out_dir}/{val_dir} "
                 + f"--source-min {curr_offset} --source-max {curr_offset + divisor} "
                 + f'--source-mnemonic "{self.mnemonic}"'
             )
@@ -81,61 +53,95 @@ class TestnetDirectoryGenerator(object):
             subprocess.run(cmd, shell=True)
             curr_offset += divisor
 
+        if (
+            start in self.generated_validators
+            or curr_offset in self.generated_validators
+        ):
+            raise Exception(f"Got overlapping validator keys from mnemonic {mnemonic}")
 
-class PrysmTestnetDirectoryGenerator(TestnetDirectoryGenerator):
+        for x in range(start, curr_offset):
+            self.generated_validators[x] = metadata
+
+    def generate_all_client_testnet_dirs(self):
+        for service in self.global_config["pos-chain"]["clients"]:
+            client_config = self.global_config["pos-chain"]["clients"][service]
+            client = client_config["client-name"]
+
+            cg = self.client_generators[client](
+                self.global_config, client_config, self.docker
+            )
+            self._generate_validator_stores(*cg.get_validator_info())
+            cg.finalize_testnet_dir()
+
+
+class TestnetDirectoryGenerator(object):
     """
-    Prysm requires:
-        piecewise validators with password
-        config file
-        genesis.ssz
+    Responsible for moving and editing files required to the clients to
+    work. Validators keys are generated through the manager so we can
+    check for overlaps across clients.
     """
 
-    def __init__(self, global_config, docker=True):
-        super().__init__(global_config)
+    def __init__(self, global_config, client_config, docker=True):
+        self.global_config = global_config
+        self.client_config = client_config
+
         if docker:
-            self.testnet_dir = pathlib.Path(
-                self.global_config["pos-chain"]["clients"]["prysm"][
-                    "docker-testnet-dir"
-                ]
-            )
-            self.password_file = self.global_config["pos-chain"]["clients"]["prysm"][
-                "docker-wallet-path"
+            self.genesis_ssz = self.global_config["pos-chain"]["files"][
+                "docker-genesis-ssz"
             ]
+            self.config = self.global_config["pos-chain"]["files"][
+                "docker-genesis-config"
+            ]
+            self.testnet_dir = pathlib.Path(self.client_config["docker-testnet-dir"])
         else:
-            self.testnet_dir = pathlib.Path(
-                self.global_config["pos-chain"]["clients"]["prysm"]["host-testnet-dir"]
-            )
-            self.password_file = self.global_config["pos-chain"]["clients"]["prysm"][
-                "host-wallet-path"
+            self.genesis_ssz = self.global_config["pos-chain"]["files"][
+                "host-genesis-ssz"
             ]
-        self.validator_store_dir = pathlib.Path(str(self.testnet_dir) + "/validators/")
-        self.password = self.global_config["pos-chain"]["clients"]["prysm"][
-            "validator-password"
-        ]
-        self.testnet_dir.mkdir()
+            self.config = self.global_config["pos-chain"]["files"][
+                "host-genesis-config"
+            ]
+            self.testnet_dir = pathlib.Path(self.client_config["host-testnet-dir"])
 
-    # TODO: this is now invalid due to chances in the piecewise validator routine above
-    def generate_testnet_dir(self):
-        print("Creating prysm testnet directory...")
-        # create local geneis ssz and config.yaml
+        self.testnet_dir.mkdir()
         shutil.copy(src=self.genesis_ssz, dst=str(self.testnet_dir) + "/genesis.ssz"),
         shutil.copy(src=self.config, dst=str(self.testnet_dir) + "/config.yaml")
-        # we also require a password file to run the prysm client without user input.
+
+
+class PrysmTestnetGenerator(TestnetDirectoryGenerator):
+    def __init__(self, global_config, client_config, docker):
+        super().__init__(global_config, client_config, docker)
+        # prysm only stuff.
+        if docker:
+            self.password_file = self.client_config["docker-wallet-path"]
+        else:
+            self.password_file = self.client_config["host-wallet-path"]
+
+        self.password = self.client_config["validator-password"]
+
         with open(self.password_file, "w") as f:
             f.write(self.password)
-        # all validators.
-        self.generate_piecewise_validators(
-            self.validator_store_dir, password=self.password
+
+    def get_validator_info(self):
+        # return data neccessary.
+        return (
+            self.client_config["validator-offset-start"],
+            self.client_config["num-nodes"],
+            self.client_config["num-validators"],
+            pathlib.Path(str(self.testnet_dir) + "/validators"),
+            self.password,
+            "prysm-client",
         )
-        # create seperate node directories.
-        divisor = int(self.num_validators / self.num_nodes)
-        curr_offset = 0
-        print("Organizing prysm testnet beacon node directories..")
-        for x in range(divisor + 1):
-            node_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{x}")
+
+    def finalize_testnet_dir(self):
+        """
+        Copy validator info into local client.
+        """
+        print(f"Finalizing prysm client {self.testnet_dir} testnet directory.")
+        for ndx in range(self.client_config["num-nodes"]):
+            node_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}")
             node_dir.mkdir()
             keystore_dir = pathlib.Path(
-                str(self.testnet_dir) + f"/validators/node_{x}/"
+                str(self.testnet_dir) + f"/validators/node_{ndx}/"
             )
             for f in keystore_dir.glob("prysm/*"):
                 if f.is_dir():
@@ -146,135 +152,9 @@ class PrysmTestnetDirectoryGenerator(TestnetDirectoryGenerator):
         shutil.rmtree(str(self.testnet_dir) + "/validators/")
 
 
-def create_prysm_testnet_dirs(global_config, docker):
-    pdg = PrysmTestnetDirectoryGenerator(global_config, docker=docker)
-    pdg.generate_testnet_dir()
-
-
-class LighthouseTestnetDirectoryGenerator(TestnetDirectoryGenerator):
-    def __init__(self, global_config, docker=True):
-        super().__init__(global_config)
-        if docker:
-            self.testnet_dir = pathlib.Path(
-                self.global_config["pos-chain"]["clients"]["lighthouse"][
-                    "docker-testnet-dir"
-                ]
-            )
-        else:
-            self.testnet_dir = pathlib.Path(
-                self.global_config["pos-chain"]["clients"]["lighthouse"][
-                    "host-testnet-dir"
-                ]
-            )
-        self.validator_store_dir = pathlib.Path(str(self.testnet_dir) + "/validators/")
-        self.testnet_dir.mkdir()
-
-    def generate_testnet_dir(self):
-        print("Creating lighthouse testnet directory...")
-        # create local geneis ssz and config.yaml
-        shutil.copy(src=self.genesis_ssz, dst=str(self.testnet_dir) + "/genesis.ssz"),
-        shutil.copy(src=self.config, dst=str(self.testnet_dir) + "/config.yaml")
-        with open(str(self.testnet_dir) + "/deploy_block.txt", "w") as f:
-            f.write(str(0))
-        self.generate_all_validators(self.validator_store_dir)
-        # split up into subdirs.
-        divisor = int(self.num_validators / self.num_nodes)
-        curr_offset = 0
-        print("Organizing lighthouse testnet beacon node directories..")
-        # use secrets to get all the keys.
-        all_key_paths = pathlib.Path(str(self.validator_store_dir) + "/secrets/").glob(
-            "*"
-        )
-        sub_dir_keys = zip_longest(*[iter(all_key_paths)] * divisor)
-        for ndx, keys in enumerate(sub_dir_keys):
-            node_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}/")
-            node_dir.mkdir()
-            secrets_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}/secrets/")
-            node_key_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}/keys/")
-            secrets_dir.mkdir()
-            node_key_dir.mkdir()
-            for k in keys:
-                # validators then secrets
-                src_key_dir = str(self.validator_store_dir) + f"/keys/{k.name}"
-                dst_key_dir = str(node_key_dir) + f"/{k.name}"
-                shutil.copytree(src_key_dir, dst_key_dir)
-                dst_secret_key = str(secrets_dir) + f"/{k.name}"
-                shutil.copy(k, dst_secret_key)
-        shutil.rmtree(str(self.testnet_dir) + "/validators/")
-
-
-def create_lighthouse_testnet_dirs(global_config, docker):
-    lhdg = LighthouseTestnetDirectoryGenerator(global_config, docker=docker)
-    lhdg.generate_testnet_dir()
-
-class TekuTestnetDirectoryGenerator(TestnetDirectoryGenerator):
-    def __init__(self, global_config, client_config, docker=True):
-        super().__init__(global_config)
-        self.client_config = client_config
-        if docker:
-            self.testnet_dir = pathlib.Path(
-                self.global_config["pos-chain"]["clients"]["teku"][
-                    "docker-testnet-dir"
-                ]
-            )
-        else:
-            self.testnet_dir = pathlib.Path(
-                self.global_config["pos-chain"]["clients"]["teku"][
-                    "host-testnet-dir"
-                ]
-            )
-        self.validator_store_dir = pathlib.Path(str(self.testnet_dir) + "/validators/")
-        self.testnet_dir.mkdir()
-
-    def generate_testnet_dir(self):
-        print("Creating teku testnet directory...")
-        # create local geneis ssz and config.yaml
-        shutil.copy(src=self.genesis_ssz, dst=str(self.testnet_dir) + "/genesis.ssz"),
-        shutil.copy(src=self.config, dst=str(self.testnet_dir) + "/config.yaml")
-        # with open(str(self.testnet_dir) + "/deploy_block.txt", "w") as f:
-        #     f.write(str(0))
-        self.generate_piecewise_validators(self.validator_store_dir, password=None)
-        # # split up into subdirs.
-        divisor = int(self.num_validators / self.num_nodes)
-        curr_offset = 0
-        print("Organizing teku testnet beacon node directories..")
-        # use secrets to get all the keys.
-        # TODO: this is very clunky for teku, fix this to be better; just want to get a test up.
-        for ndx in range(self.client_config['num-nodes']):
-            node_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}")
-            node_dir.mkdir()
-            src_dir = pathlib.Path(str(self.validator_store_dir) + f"/node_{ndx}")
-            shutil.copytree(str(src_dir) + "/teku-keys", str(node_dir) + "/keys")
-            shutil.copytree(str(src_dir) + "/teku-secrets", str(node_dir) + "/secrets")
-        
-        shutil.rmtree(str(self.testnet_dir) + "/validators/")
-
-
-def create_client_testnet_dir(global_config, client, docker):
-    if client == "prysm":
-        create_prysm_testnet_dirs(global_config, docker)
-    elif client == "lighthouse":
-        create_lighthouse_testnet_dirs(global_config, docker)
-    elif client == "teku":
-        # TODO we need to fix this for multiple client listings.
-        client_config = global_config['pos-chain']['clients']['teku']
-        ttdg = TekuTestnetDirectoryGenerator(global_config, client_config, docker)
-        ttdg.generate_testnet_dir()
-    else:
-        raise Exception(
-            f"Unimplented client label for testnet directory creation ({client})"
-        )
-
-
 def create_testnet_dirs(global_config, docker):
-    # tdg = TestnetDirectoryGenerator(global_config)
-    # tdg.generate_validators(out_dir)
-
-    # pdg = PrysmTestnetDirectoryGenerator(global_config, docker=docker)
-    # pdg.generate_testnet_dir()
-
-    lhdg = LighthouseTestnetDirectoryGenerator(global_config, docker=docker)
-    lhdg.generate_testnet_dir()
+    tdm = TestnetDirectoryManager(global_config, docker)
+    tdm.generate_all_client_testnet_dirs()
 
 
 if __name__ == "__main__":

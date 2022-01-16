@@ -9,7 +9,7 @@ from DockerWriter import create_docker_compose
 from GethGenesisWriter import create_geth_genesis
 from ConsensusGenesisConfigWriter import create_consensus_config
 from ConsensusGenesisGenerator import create_genesis_ssz
-from TestnetDirectoryGenerator import create_client_testnet_dir
+from TestnetDirectoryGenerator import create_testnet_dirs
 
 
 def create_scenario(args):
@@ -34,13 +34,7 @@ def create_scenario(args):
     create_docker_compose(global_config, docker_compose_out)
     create_consensus_config(global_config, consensus_config_out)
     create_genesis_ssz(global_config, consensus_genesis_out, args.docker)
-
-    # create testnet directories...
-    print("Populating non-zero client testnet directories")
-    for client in global_config['pos-chain']['clients']:
-        if global_config['pos-chain']['clients'][client]['num-nodes'] > 0:
-            create_client_testnet_dir(global_config, client, args.docker)
-
+    create_testnet_dirs(global_config, args.docker)
 
 
 parser = argparse.ArgumentParser()
