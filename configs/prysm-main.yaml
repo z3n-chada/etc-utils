@@ -14,7 +14,6 @@ docker:
 # scenarios. (populated in create_scenarios.py)
 universal:
     now: 0xdeadbeef
-    ip-skip: 5 # should be equal to the number of possible clients
     merge-testnet: False #TODO: will probably require some renaming and moving things around.
 
     consensus-presets:
@@ -152,26 +151,28 @@ pos-chain:
             bootnode-enr-file: "/data/local_testnet/bootnode/enr.dat" #this is only touched/modified in a docker
 
     clients:
-        lighthouse-main:
-            client-name: "lighthouse"
+        prysm:
+            client-name: "prysm"
             # docker specefic args
             # TODO: container name + env-vars
             ip-start: "10.0.20.4"
-            image: "lighthouse-client"
+            image: "prysm-client"
             tag: "latest"
             debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
             # client specific args that can't be derrived from this config file.
             start-metric-port: 9000
-            start-p2p-port: 8000
             pow-port: 8545 # TODO
-            docker-testnet-dir: "/data/local_testnet/lighthouse"
-            host-testnet-dir: "shared-data/local_testnet/lighthouse"
-            debug-level: debug # logging output level of the beacon and validator node.
+            docker-testnet-dir: "/data/local_testnet/prysm"
+            host-testnet-dir: "shared-data/local_testnet/prysm"
+            validator-password: "testnet-password"
+            host-wallet-path: "shared-data/local_testnet/prysm/wallet-password.txt"
+            docker-wallet-path: "/data/local_testnet/prysm/wallet-password.txt"
             # specify which set of keys to use.
             # each beacon-validator pair consists of int(num-validators/num-beacon-nodes)
             validator-offset-start: 0
             num-nodes: 8
             num-validators: 80
+
 
     files:
         docker-genesis-config: "/data/local_testnet/eth2-config.yaml"

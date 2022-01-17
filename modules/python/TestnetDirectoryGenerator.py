@@ -29,9 +29,10 @@ class TestnetDirectoryManager(object):
         ]
 
         self.client_generators = {
-                "prysm": PrysmTestnetGenerator,
-                "lighthouse": LighthouseTestnetGenerator,
-                }
+            "prysm": PrysmTestnetGenerator,
+            "lighthouse": LighthouseTestnetGenerator,
+            "teku": TekuTestnetGenerator,
+        }
 
         self.generated_validators = {}
 
@@ -170,18 +171,30 @@ class LighthouseTestnetGenerator(TestnetDirectoryGenerator):
         for ndx in range(self.client_config["num-nodes"]):
             node_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}")
             node_dir.mkdir()
-            keystore_dir = pathlib.Path(
-                str(self.testnet_dir) + f"/validators/node_{ndx}/"
-            )
-            node_secrets_dir = pathlib.Path(
-                str(self.testnet_dir) + f"/node_{ndx}/secrets/"
-            )
-            node_key_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}/keys/")
-            #node_secrets_dir.mkdir()
-            #node_key_dir.mkdir()
-            shutil.copytree(str(keystore_dir) + "/keys/", node_key_dir)
-            shutil.copytree(str(keystore_dir) + "/secrets/", node_secrets_dir)
+            keystore_dir = pathlib.Path(str(self.testnet_dir) + f"/validators")
+            src_dir = pathlib.Path(str(keystore_dir) + f"/node_{ndx}")
+            shutil.copytree(str(src_dir) + "/keys", str(node_dir) + "/keys")
+            shutil.copytree(str(src_dir) + "/secrets", str(node_dir) + "/secrets")
         # done now clean up..
+        shutil.rmtree(str(self.testnet_dir) + "/validators/")
+
+
+class TekuTestnetGenerator(TestnetDirectoryGenerator):
+    def __init__(self, global_config, client_config, docker):
+        super().__init__(global_config, client_config, docker)
+
+    def finalize_testnet_dir(self):
+        """
+        Copy validator info into local client.
+        """
+        for ndx in range(self.client_config["num-nodes"]):
+            node_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}")
+            node_dir.mkdir()
+            keystore_dir = pathlib.Path(str(self.testnet_dir) + f"/validators")
+            src_dir = pathlib.Path(str(keystore_dir) + f"/node_{ndx}")
+            shutil.copytree(str(src_dir) + "/teku-keys", str(node_dir) + "/keys")
+            shutil.copytree(str(src_dir) + "/teku-secrets", str(node_dir) + "/secrets")
+
         shutil.rmtree(str(self.testnet_dir) + "/validators/")
 
 

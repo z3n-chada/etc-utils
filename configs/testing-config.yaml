@@ -153,12 +153,12 @@ pos-chain:
 
     clients:
         prysm:
+            client-name: "prysm"
             # docker specefic args
             # TODO: container name + env-vars
             ip-start: "10.0.20.4"
             image: "prysm-client"
             tag: "latest"
-            num-nodes: 8
             debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
             # client specific args that can't be derrived from this config file.
             start-metric-port: 9000
@@ -168,6 +168,12 @@ pos-chain:
             validator-password: "testnet-password"
             host-wallet-path: "shared-data/local_testnet/prysm/wallet-password.txt"
             docker-wallet-path: "/data/local_testnet/prysm/wallet-password.txt"
+            # specify which set of keys to use.
+            # each beacon-validator pair consists of int(num-validators/num-beacon-nodes)
+            validator-offset-start: 0
+            num-nodes: 8
+            num-validators: 80
+
             #teku:
             #    # docker specefic args
             #    image: "teku-client"
@@ -192,31 +198,31 @@ pos-chain:
             #    pow-port: 8545
             #    docker-testnet-dir: "/data/local_testnet/nimbus"
             #    host-testnet-dir: "shared-data/local_testnet/nimbus"
-        lighthouse:
-            # docker specefic args
-            image: "lighthouse-client"
-            tag: "latest"
-            num-nodes: 0 
-            debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
-            ip-start: "10.0.20.7"
-            # client specific args that can't be derrived from this config file.
-            debug-level: "debug"
-            start-metric-port: 8000
-            start-p2p-port: 9000
-            docker-testnet-dir: "/data/local_testnet/lighthouse"
-            host-testnet-dir: "shared-data/local_testnet/lighthouse"
-            #lodestar:
-            #    # docker specefic args
-            #    image: "lodestar-client"
-            #    tag: "latest"
-            #    num-nodes: 0
-            #    debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
-            #    ip-start: "10.0.20.8"
-            #    # client specific args that can't be derrived from this config file.
-            #    start-metric-port: 9000
-            #    pow-port: 8545
-            #    docker-testnet-dir: "/data/local_testnet/lodestar"
-            #    host-testnet-dir: "shared-data/local_testnet/lodestar"
+            # lighthouse:
+            #     # docker specefic args
+            #     image: "lighthouse-client"
+            #     tag: "latest"
+            #     num-nodes: 0 
+            #     debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
+            #     ip-start: "10.0.20.7"
+            #     # client specific args that can't be derrived from this config file.
+            #     debug-level: "debug"
+            #     start-metric-port: 8000
+            #     start-p2p-port: 9000
+            #     docker-testnet-dir: "/data/local_testnet/lighthouse"
+            #     host-testnet-dir: "shared-data/local_testnet/lighthouse"
+            #     #lodestar:
+            #     #    # docker specefic args
+            #     #    image: "lodestar-client"
+            #     #    tag: "latest"
+            #     #    num-nodes: 0
+            #     #    debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
+            #     #    ip-start: "10.0.20.8"
+            #     #    # client specific args that can't be derrived from this config file.
+            #     #    start-metric-port: 9000
+            #     #    pow-port: 8545
+            #     #    docker-testnet-dir: "/data/local_testnet/lodestar"
+            #     #    host-testnet-dir: "shared-data/local_testnet/lodestar"
 
     files:
         docker-genesis-config: "/data/local_testnet/eth2-config.yaml"
@@ -228,8 +234,9 @@ pos-chain:
         tmp-validator-config: "/tmp/validators.yaml"
 
     accounts:
+        #mnemonics go here so we can pre-load the genesis state with deposits.
         validator-mnemonic: "ocean style run case glory clip into nature guess jacket document firm fiscal hello kite disagree symptom tide net coral envelope wink render festival" 
         withdrawl-mnemonic: "scatter supreme field crazy unveil chronic favorite middle front umbrella mutual gentle word wild economy dress whale whip method office report eternal garment parrot"
         # these must be divide evenly.
-        total-beacon-nodes: 20
+        total-beacon-nodes: 8
         total-validators: 80

@@ -50,8 +50,7 @@ class ClientWriter(object):
     def get_ip(self):
         prefix = ".".join(self.client_config["ip-start"].split(".")[:3]) + "."
         base = int(self.client_config["ip-start"].split(".")[-1])
-        skip = self.curr_node * int(self.global_config["universal"]["ip-skip"])
-        ip = prefix + str(base + skip)
+        ip = prefix + str(base + self.curr_node)
         return ip
 
     def _entrypoint(self):
@@ -211,6 +210,8 @@ class DockerComposeWriter(object):
             "teku": TekuClientWriter,
             "lighthouse": LighthouseClientWriter,
         }
+        # due config structure we must check ips for overlaps.
+        self.registered_ips = {}
 
     def _base(self):
         return {
@@ -236,14 +237,26 @@ class DockerComposeWriter(object):
         geth_config = self.global_config["pow-chain"]["geth"]
         for n in range(geth_config["num-nodes"]):
             gcw = GethClientWriter(self.global_config, geth_config, curr_node)
-            self.yml["services"][gcw.name] = gcw.get_config()
-            curr_node += 1
+            if gcw.get_ip() not in self.registered_ips:
+                self.yml["services"][gcw.name] = gcw.get_config()
+                curr_node += 1
+                self.registered_ips[gcw.get_ip()] = {"client": gcw.name}
+            else:
+                raise Exception(
+                    f"geth client ip overlaps with: {self.registered_ips[gcw.get_ip()]}"
+                )
 
         bootnode_config = self.global_config["pos-chain"]["bootnodes"]["eth2-bootnode"]
         # note this does not contribute to curr_nodes
         for n in range(bootnode_config["num-nodes"]):
             bcw = BootnodeClientWriter(self.global_config, bootnode_config, n)
-            self.yml["services"][bcw.name] = bcw.get_config()
+            if bcw.get_ip() not in self.registered_ips:
+                self.yml["services"][bcw.name] = bcw.get_config()
+                self.registered_ips[bcw.get_ip()] = {"client": bcw.name}
+            else:
+                raise Exception(
+                    f"bootnode client ip overlaps with: {self.registered_ips[bcw.get_ip()]}"
+                )
 
         for services in self.global_config["pos-chain"]["clients"]:
             client_config = self.global_config["pos-chain"]["clients"][services]
@@ -252,8 +265,14 @@ class DockerComposeWriter(object):
                 client_writer = self.client_writers[client](
                     self.global_config, client_config, n
                 )
-                self.yml["services"][client_writer.name] = client_writer.get_config()
-                curr_node += 1
+                if client_writer.get_ip() not in self.registered_ips:
+                    self.yml["services"][client_writer.name] = client_writer.get_config()
+                    curr_node += 1
+                    self.registered_ips[client_writer.get_ip()] = {"client": client_writer.name}
+                else:
+                    raise Exception(
+                        f"{client_writer.name} ip overlaps with: {self.registered_ips[client_writer.get_ip()]}"
+                    )
 
     def write_to_file(self, out_file):
         with open(out_file, "w") as f:

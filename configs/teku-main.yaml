@@ -154,9 +154,9 @@ pos-chain:
     clients:
         teku:
             # docker specefic args
+            client-name: "teku"
             image: "teku-client"
             tag: "latest"
-            num-nodes: 20
             debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
             ip-start: "10.0.20.6"
             # client specific args that can't be derrived from this config file.
@@ -167,6 +167,10 @@ pos-chain:
             pow-port: 8545
             docker-testnet-dir: "/data/local_testnet/teku"
             host-testnet-dir: "shared-data/local_testnet/teku"
+
+            validator-offset-start: 0
+            num-nodes: 8
+            num-validators: 80
 
     files:
         docker-genesis-config: "/data/local_testnet/eth2-config.yaml"
