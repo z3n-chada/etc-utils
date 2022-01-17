@@ -28,7 +28,10 @@ class TestnetDirectoryManager(object):
             "validator-mnemonic"
         ]
 
-        self.client_generators = {"prysm": PrysmTestnetGenerator}
+        self.client_generators = {
+                "prysm": PrysmTestnetGenerator,
+                "lighthouse": LighthouseTestnetGenerator,
+                }
 
         self.generated_validators = {}
 
@@ -84,6 +87,7 @@ class TestnetDirectoryGenerator(object):
     def __init__(self, global_config, client_config, docker=True):
         self.global_config = global_config
         self.client_config = client_config
+        self.password = None  # default, only prysm changes this.
 
         if docker:
             self.genesis_ssz = self.global_config["pos-chain"]["files"][
@@ -106,6 +110,17 @@ class TestnetDirectoryGenerator(object):
         shutil.copy(src=self.genesis_ssz, dst=str(self.testnet_dir) + "/genesis.ssz"),
         shutil.copy(src=self.config, dst=str(self.testnet_dir) + "/config.yaml")
 
+    def get_validator_info(self):
+        # return data neccessary.
+        return (
+            self.client_config["validator-offset-start"],
+            self.client_config["num-nodes"],
+            self.client_config["num-validators"],
+            pathlib.Path(str(self.testnet_dir) + "/validators"),
+            self.password,
+            self.client_config["client-name"],
+        )
+
 
 class PrysmTestnetGenerator(TestnetDirectoryGenerator):
     def __init__(self, global_config, client_config, docker):
@@ -120,17 +135,6 @@ class PrysmTestnetGenerator(TestnetDirectoryGenerator):
 
         with open(self.password_file, "w") as f:
             f.write(self.password)
-
-    def get_validator_info(self):
-        # return data neccessary.
-        return (
-            self.client_config["validator-offset-start"],
-            self.client_config["num-nodes"],
-            self.client_config["num-validators"],
-            pathlib.Path(str(self.testnet_dir) + "/validators"),
-            self.password,
-            "prysm-client",
-        )
 
     def finalize_testnet_dir(self):
         """
@@ -148,6 +152,35 @@ class PrysmTestnetGenerator(TestnetDirectoryGenerator):
                     shutil.copytree(src=f, dst=f"{node_dir}/{f.name}")
                 else:
                     shutil.copy(src=f, dst=f"{node_dir}/{f.name}")
+        # done now clean up..
+        shutil.rmtree(str(self.testnet_dir) + "/validators/")
+
+
+class LighthouseTestnetGenerator(TestnetDirectoryGenerator):
+    def __init__(self, global_config, client_config, docker):
+        super().__init__(global_config, client_config, docker)
+        with open(str(self.testnet_dir) + "/deploy_block.txt", "w") as f:
+            f.write("0")
+
+    def finalize_testnet_dir(self):
+        """
+        Copy validator info into local client.
+        """
+        print(f"Finalizing lighthouse client {self.testnet_dir} testnet directory.")
+        for ndx in range(self.client_config["num-nodes"]):
+            node_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}")
+            node_dir.mkdir()
+            keystore_dir = pathlib.Path(
+                str(self.testnet_dir) + f"/validators/node_{ndx}/"
+            )
+            node_secrets_dir = pathlib.Path(
+                str(self.testnet_dir) + f"/node_{ndx}/secrets/"
+            )
+            node_key_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}/keys/")
+            #node_secrets_dir.mkdir()
+            #node_key_dir.mkdir()
+            shutil.copytree(str(keystore_dir) + "/keys/", node_key_dir)
+            shutil.copytree(str(keystore_dir) + "/secrets/", node_secrets_dir)
         # done now clean up..
         shutil.rmtree(str(self.testnet_dir) + "/validators/")
 

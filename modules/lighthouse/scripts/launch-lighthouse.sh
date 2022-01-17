@@ -11,7 +11,7 @@ ETH1_ENDPOINT=$7
 
 sleep 10 # wait for bootnode to come up
 
-if [ -f $TESTNET_DIR/boot_enr.yaml ]; then
+if [ ! -f "$TESTNET_DIR/boot_enr.yaml" ]; then
     bootnode_enr=`cat $TESTNET_DIR/../bootnode/enr.dat`
     echo "- $bootnode_enr" > $TESTNET_DIR/boot_enr.yaml
 fi

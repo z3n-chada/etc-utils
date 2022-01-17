@@ -245,34 +245,15 @@ class DockerComposeWriter(object):
             bcw = BootnodeClientWriter(self.global_config, bootnode_config, n)
             self.yml["services"][bcw.name] = bcw.get_config()
 
-        for client in self.global_config["pos-chain"]["clients"]:
-            client_config = self.global_config["pos-chain"]["clients"][client]
+        for services in self.global_config["pos-chain"]["clients"]:
+            client_config = self.global_config["pos-chain"]["clients"][services]
+            client = client_config["client-name"]
             for n in range(client_config["num-nodes"]):
                 client_writer = self.client_writers[client](
                     self.global_config, client_config, n
                 )
                 self.yml["services"][client_writer.name] = client_writer.get_config()
                 curr_node += 1
-
-        """
-        prysm_config = self.global_config["pos-chain"]["clients"]["prysm"]
-        for n in range(prysm_config["num-nodes"]):
-            pcw = PrysmClientWriter(self.global_config, prysm_config, n)
-            self.yml["services"][pcw.name] = pcw.get_config()
-            curr_node += 1
-
-        lighthouse_config = self.global_config["pos-chain"]["clients"]["lighthouse"]
-        for n in range(lighthouse_config["num-nodes"]):
-            lhcw = LighthouseClientWriter(self.global_config, lighthouse_config, n)
-            self.yml["services"][lhcw.name] = lhcw.get_config()
-            curr_node += 1
-
-        teku_config = self.global_config["pos-chain"]["clients"]["teku"]
-        for n in range(teku_config["num-nodes"]):
-            tcw = TekuClientWriter(self.global_config, teku_config, n)
-            self.yml["services"][tcw.name] = tcw.get_config()
-            curr_node += 1
-        """
 
     def write_to_file(self, out_file):
         with open(out_file, "w") as f:
