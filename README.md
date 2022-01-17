@@ -14,6 +14,9 @@ Between runs use make clean; to build the scenario run the etc-scenario-builder 
 4. (in docker) exit
 5. (in project root directory on host) docker-compose up --force-recreate
 
+# Configs
+...
+
 
 # Modules
 ## Python
