@@ -136,6 +136,8 @@ pos-chain:
             network-id: 0x01000666
             contract-address: "0x8c594691c0e592ffa21f153a16ae41db5befcaaa"
 
+    # similiar to clients but you need to specify the entrypoint
+
     bootnodes:
         # only one implemented currently..
         eth2-bootnode:
@@ -160,7 +162,9 @@ pos-chain:
             tag: "latest"
             debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
             # client specific args that can't be derrived from this config file.
-            start-metric-port: 9000
+            start-http-port: 9000
+            start-p2p-port: 8000
+            start-rest-port: 7000
             pow-port: 8545 # TODO
             docker-testnet-dir: "/data/local_testnet/prysm"
             host-testnet-dir: "shared-data/local_testnet/prysm"
@@ -190,3 +194,31 @@ pos-chain:
         # these must be divide evenly.
         total-beacon-nodes: 8
         total-validators: 80
+
+scripts:
+    status-checker: # the name used by the ScriptWriter.
+        enabled: True
+        debug: False # bypass entrypoint and get a tty shell with std_in
+        #docker specific
+        ip-start: "10.0.20.200"
+        image: "etc-builder" #has all of the python libs we need.
+        tag: "latest"
+        num-nodes: 1
+        volumes: ["./shared-data:/data/", "./:/source/"]
+        entrypoint: ["python3", "/data/scripts/status_checker.py", "--config", "/data/testnet-config.yaml"]
+        # where to fetch and drop the files
+        files:
+            docker:
+                script:
+                    src: "/source/scripts/status_checker.py"
+                    dest: "/data/scripts/status_checker.py"
+                config:
+                    src: "/source/configs/prysm-main.yaml" #this file.
+                    dest: "/data/testnet-config.yaml" 
+            host:
+                script:
+                    src: "scripts/status_checker.py"
+                    dest: "shared-data/scripts/status_checker.py"
+                config:
+                    src: "configs/prysm-main.yaml" #this file.
+                    dest: "shared-data/testnet-config.yaml" 

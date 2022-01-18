@@ -4,6 +4,9 @@
     These modules rely on yaml configurations that you pass in as an
     argument.
 """
+import pathlib
+import shutil
+
 from ruamel import yaml
 
 
@@ -89,7 +92,7 @@ class PrysmClientWriter(ClientWriter):
 
     def _entrypoint(self):
         """
-        ./launch-prysm <testnet-dir> <node-dir> <web3-provider> <deposit-contract> <ip-address> <tcp-port>
+        ./launch-prysm <testnet-dir> <node-dir> <web3-provider> <deposit-contract> <ip-address> <p2p-port> <rest-port> <http-port>
         TODO: bootnodes.
         """
         testnet_dir = str(self.client_config["docker-testnet-dir"])
@@ -106,7 +109,9 @@ class PrysmClientWriter(ClientWriter):
             web3_provider,
             deposit_contract,
             str(self.get_ip()),
-            str(int(self.client_config["start-metric-port"]) + self.curr_node),
+            str(int(self.client_config["start-p2p-port"]) + self.curr_node),
+            str(int(self.client_config["start-rest-port"]) + self.curr_node),
+            str(int(self.client_config["start-http-port"]) + self.curr_node),
         ]
 
 
@@ -197,12 +202,47 @@ class BootnodeClientWriter(ClientWriter):
         ]
 
 
+class ScriptWriter(ClientWriter):
+    """
+    Read from the script profiles and setup a shim to launch a program
+    within the testnet network.
+    """
+
+    def __init__(self, global_config, client_config, name, curr_node=0, docker=True):
+        super().__init__(global_config, client_config, name, curr_node)
+        self.docker = True
+        for v in self.client_config["volumes"]:
+            if v not in self.volumes:
+                self.volumes.append(v)
+        self._prework()
+
+    def _prework(self):
+        """
+        Copy the sources to the destination
+        """
+        if self.docker:
+            file_ndx = "docker"
+        else:
+            file_ndx = "host"
+
+        for s in self.client_config["files"][file_ndx]:
+            src = self.client_config["files"][file_ndx][s]["src"]
+            dest = self.client_config["files"][file_ndx][s]["dest"]
+            print(f"Script writer copying {s} ({src} -> {dest})")
+            shutil.copy(src, dest)
+
+    def _entrypoint(self):
+
+        return self.client_config["entrypoint"]
+
+
 class DockerComposeWriter(object):
     """
     Class to create the actual docker-compose.yaml file.
     """
 
-    def __init__(self, global_config):
+    def __init__(self, global_config, docker=True):
+        self.docker = docker
         self.global_config = global_config
         self.yml = self._base()
         self.client_writers = {
@@ -266,21 +306,37 @@ class DockerComposeWriter(object):
                     self.global_config, client_config, n
                 )
                 if client_writer.get_ip() not in self.registered_ips:
-                    self.yml["services"][client_writer.name] = client_writer.get_config()
+                    self.yml["services"][
+                        client_writer.name
+                    ] = client_writer.get_config()
                     curr_node += 1
-                    self.registered_ips[client_writer.get_ip()] = {"client": client_writer.name}
+                    self.registered_ips[client_writer.get_ip()] = {
+                        "client": client_writer.name
+                    }
                 else:
                     raise Exception(
                         f"{client_writer.name} ip overlaps with: {self.registered_ips[client_writer.get_ip()]}"
                     )
+
+        for service in self.global_config["scripts"]:
+            client_config = self.global_config["scripts"][service]
+            if client_config["enabled"]:
+                client = service
+                for n in range(client_config["num-nodes"]):
+                    client_writer = ScriptWriter(
+                        self.global_config, client_config, client, n, self.docker
+                    )
+                    self.yml["services"][
+                        client_writer.name
+                    ] = client_writer.get_config()
 
     def write_to_file(self, out_file):
         with open(out_file, "w") as f:
             yaml.dump(self.yml, f)
 
 
-def create_docker_compose(global_config, out_file):
-    dcw = DockerComposeWriter(global_config)
+def create_docker_compose(global_config, out_file, docker):
+    dcw = DockerComposeWriter(global_config, docker)
     dcw.add_services()
     dcw.write_to_file(out_file)
 
@@ -290,6 +346,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", dest="config", help="path to config to consume")
+    parser.add_argument(
+        "--docker",
+        dest="docker",
+        action="store_true",
+        help="are we running in a docker container",
+    )
     parser.add_argument(
         "--out", dest="out", help="path to write the generated docker-compose.yaml"
     )

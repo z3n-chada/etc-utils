@@ -17,7 +17,14 @@ Between runs use make clean; to build the scenario run the etc-scenario-builder 
 # Configs
 ...
 
+# Clients
+Currently you can easily set up prysm, lighthouse, and teku beacon/validator combos. Additionally there is a status-checker
 
+To enable this feature just set status-checker: enabled: True under scripts in the config file you are using. The code for this can be found
+in the scripts/status\_checker.py
+
+# Scripts
+A generic client that just starts up a docker image with the entrypoint that you define. You must also specify the source of the script and its destination to be copied to. The source and be a list if you need multiple modules. 
 # Modules
 ## Python
 ### DockerWriter.py

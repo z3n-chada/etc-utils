@@ -5,10 +5,10 @@ import time
 
 import ruamel.yaml as yaml
 
-from DockerWriter import create_docker_compose
-from GethGenesisWriter import create_geth_genesis
 from ConsensusGenesisConfigWriter import create_consensus_config
 from ConsensusGenesisGenerator import create_genesis_ssz
+from DockerWriter import create_docker_compose
+from GethGenesisWriter import create_geth_genesis
 from TestnetDirectoryGenerator import create_testnet_dirs
 
 
@@ -20,18 +20,26 @@ def create_scenario(args):
     global_config["universal"]["now"] = now
 
     if args.docker:
-        geth_genesis_out = global_config['pow-chain']['files']['docker-eth1-genesis-file']
-        docker_compose_out = global_config['docker']['docker-docker-compose-file']
-        consensus_config_out = global_config['pos-chain']['files']['docker-genesis-config']
-        consensus_genesis_out = global_config['pos-chain']['files']['docker-genesis-ssz']
+        geth_genesis_out = global_config["pow-chain"]["files"][
+            "docker-eth1-genesis-file"
+        ]
+        docker_compose_out = global_config["docker"]["docker-docker-compose-file"]
+        consensus_config_out = global_config["pos-chain"]["files"][
+            "docker-genesis-config"
+        ]
+        consensus_genesis_out = global_config["pos-chain"]["files"][
+            "docker-genesis-ssz"
+        ]
     else:
-        geth_genesis_out = global_config['pow-chain']['files']['host-eth1-genesis-file']
-        docker_compose_out = global_config['docker']['host-docker-compose-file']
-        consensus_config_out = global_config['pos-chain']['files']['host-genesis-config']
-        consensus_genesis_out = global_config['pos-chain']['files']['host-genesis-ssz']
+        geth_genesis_out = global_config["pow-chain"]["files"]["host-eth1-genesis-file"]
+        docker_compose_out = global_config["docker"]["host-docker-compose-file"]
+        consensus_config_out = global_config["pos-chain"]["files"][
+            "host-genesis-config"
+        ]
+        consensus_genesis_out = global_config["pos-chain"]["files"]["host-genesis-ssz"]
 
     create_geth_genesis(global_config, geth_genesis_out)
-    create_docker_compose(global_config, docker_compose_out)
+    create_docker_compose(global_config, docker_compose_out, args.docker)
     create_consensus_config(global_config, consensus_config_out)
     create_genesis_ssz(global_config, consensus_genesis_out, args.docker)
     create_testnet_dirs(global_config, args.docker)
