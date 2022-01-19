@@ -187,6 +187,7 @@ class TekuTestnetGenerator(TestnetDirectoryGenerator):
         """
         Copy validator info into local client.
         """
+        print(f"Finalizing teku client {self.testnet_dir} testnet directory.")
         for ndx in range(self.client_config["num-nodes"]):
             node_dir = pathlib.Path(str(self.testnet_dir) + f"/node_{ndx}")
             node_dir.mkdir()
