@@ -161,10 +161,10 @@ pos-chain:
             ip-start: "10.0.20.6"
             # client specific args that can't be derrived from this config file.
             debug-level: "debug"
-            start-metric-port: 9000
+            start-http-port: 9000
             start-p2p-port: 8000
             start-rest-port: 4000
-            pow-port: 8545
+            pow-port: 8545 # TODO:
             docker-testnet-dir: "/data/local_testnet/teku"
             host-testnet-dir: "shared-data/local_testnet/teku"
 
@@ -187,3 +187,31 @@ pos-chain:
         # these must be divide evenly.
         total-beacon-nodes: 20
         total-validators: 80
+
+scripts:
+    status-checker: # the name used by the ScriptWriter.
+        enabled: True
+        debug: False # bypass entrypoint and get a tty shell with std_in
+        #docker specific
+        ip-start: "10.0.20.200"
+        image: "etc-builder" #has all of the python libs we need.
+        tag: "latest"
+        num-nodes: 1
+        volumes: ["./shared-data:/data/", "./:/source/"]
+        entrypoint: ["python3", "/data/scripts/status_checker.py", "--config", "/data/testnet-config.yaml"]
+        # where to fetch and drop the files
+        files:
+            docker:
+                script:
+                    src: "/source/scripts/status_checker.py"
+                    dest: "/data/scripts/status_checker.py"
+                config:
+                    src: "/source/configs/teku-main.yaml" #this file.
+                    dest: "/data/testnet-config.yaml" 
+            host:
+                script:
+                    src: "scripts/status_checker.py"
+                    dest: "shared-data/scripts/status_checker.py"
+                config:
+                    src: "configs/teku-main.yaml" #this file.
+                    dest: "shared-data/testnet-config.yaml" 

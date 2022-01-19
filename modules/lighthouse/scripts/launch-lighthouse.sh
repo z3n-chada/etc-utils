@@ -4,10 +4,11 @@
 DEBUG_LEVEL=$1 
 TESTNET_DIR=$2
 NODE_DIR=$3
-P2P_PORT=$4
-API_PORT=$5
-IP_ADDR=$6
-ETH1_ENDPOINT=$7
+ETH1_ENDPOINT=$4
+IP_ADDR=$5
+P2P_PORT=$6
+REST_PORT=$7
+HTTP_PORT=$8
 
 sleep 10 # wait for bootnode to come up
 
@@ -26,8 +27,8 @@ lighthouse \
 	--enr-udp-port $P2P_PORT \
 	--enr-tcp-port $P2P_PORT \
 	--port $P2P_PORT \
-	--http --http-port $API_PORT \
 	--eth1 --eth1-endpoints "$ETH1_ENDPOINT" \
+	--http --http-port $REST_PORT \
 	--http-address 0.0.0.0 \
 	--http-allow-origin "*" &
 
@@ -40,4 +41,4 @@ lighthouse \
     --validators-dir "$NODE_DIR/keys" \
     --secrets-dir "$NODE_DIR/secrets" \
 	--init-slashing-protection \
-	--beacon-nodes "http://localhost:$API_PORT"
+	--beacon-nodes "http://localhost:$REST_PORT"

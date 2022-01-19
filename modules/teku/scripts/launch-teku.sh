@@ -1,15 +1,13 @@
 #!/bin/bash
 
-# Usage: <LOGGING> <TESTNET_DIR> <NODE_DIR> <P2P_PORT> <METRIC_PORT> <REST_PORT> <ETH1_ENDPOINT>
-
 DEBUG_LEVEL=$1 
 TESTNET_DIR=$2
 NODE_DIR=$3
-P2P_PORT=$4
-METRIC_PORT=$5
-REST_PORT=$6
-IP_ADDR=$7
-ETH1_ENDPOINT=$8
+ETH1_ENDPOINT=$4
+IP_ADDR=$5
+P2P_PORT=$6
+REST_PORT=$7
+HTTP_PORT=$8
 
 sleep 10 # wait for bootnode to come up
 
@@ -25,7 +23,7 @@ teku --network "$TESTNET_DIR/config.yaml" \
     --p2p-discovery-bootnodes="$bootnode_enr" \
     --metrics-enabled=true \
     --metrics-interface=0.0.0.0 \
-    --metrics-port="$METRIC_PORT" \
+    --metrics-port="$HTTP_PORT" \
     --metrics-host-allowlist="*" \
     --p2p-discovery-enabled=true \
     --p2p-advertised-ip="$IP_ADDR" \
@@ -38,8 +36,6 @@ teku --network "$TESTNET_DIR/config.yaml" \
     --rest-api-interface=0.0.0.0 \
     --rest-api-port="$REST_PORT" \
     --rest-api-host-allowlist="*" \
-    --metrics-host-allowlist="*" \
-    --metrics-host-allowlist="*" \
     --metrics-host-allowlist="*" &
 
 sleep 15
