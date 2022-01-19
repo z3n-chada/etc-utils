@@ -23,7 +23,7 @@ sleep 10
     --deposit-contract=$DEPOSIT_CONTRACT \
     --p2p-host-ip="$IP_ADDR" \
     --p2p-tcp-port="$P2P_PORT" \
-    --grpc-gateway-host "0.0.0.0" --grpc-gateway-port "$HTTP_PORT" &
+    --grpc-gateway-host "0.0.0.0" --grpc-gateway-port "$REST_PORT" &
 
 sleep 20
 

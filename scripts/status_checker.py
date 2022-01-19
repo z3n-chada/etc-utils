@@ -39,7 +39,7 @@ class ConsensusStatusChecker(object):
             raise Exception("Not implemented")
         print(self.clients)
         print(client)
-        port = self.clients[client]["http"]
+        port = self.clients[client]["rest"]
         response = requests.get(f"http://{client}:{port}/eth/v1/node/syncing")
         print(response.json())
         return response.json()["data"]["head_slot"]
@@ -52,13 +52,13 @@ class ConsensusStatusChecker(object):
             ip, ports = random.choice(list(self.clients.items()))
         print(f"{ip} -> {ports}")
         response = self._get_with_retry(
-            f"http://{ip}:{ports['http']}/eth/v1/beacon/genesis",
+            f"http://{ip}:{ports['rest']}/eth/v1/beacon/genesis",
             retries=retries,
             retry_delay=retry_delay,
         )
         if response is None or response.status_code != 200:
             raise Exception("Timeout for genesis wait exceeded expectation")
-        print(f"Genesis detected from {ports['client']}:{ip}:{ports['http']}")
+        print(f"Genesis detected from {ports['client']}:{ip}:{ports['rest']}")
         genesis_time = int(response.json()["data"]["genesis_time"])
         curr_time = int(time.time())
         while curr_time < genesis_time:
@@ -78,7 +78,7 @@ class ConsensusStatusChecker(object):
         while curr_slot < target_slot:
             ports = self.clients[oracle]
             response = requests.get(
-                f"http://{oracle}:{ports['http']}/eth/v1/node/syncing"
+                f"http://{oracle}:{ports['rest']}/eth/v1/node/syncing"
             )
             curr_slot = int(response.json()["data"]["head_slot"])
             print(f"waiting for slot... {curr_slot}/{target_slot}", flush=True)
@@ -88,7 +88,7 @@ class ConsensusStatusChecker(object):
         if http == False:
             raise Exception("Not implemented")
         ports = self.clients[client_ip]
-        req = f"http://{client_ip}:{ports['http']}/{path}"
+        req = f"http://{client_ip}:{ports['rest']}{path}"
         response = requests.get(req)
         return response
 
@@ -120,7 +120,7 @@ class ConsensusStatusChecker(object):
                 time.sleep(0.5)
 
             for slot_query in self.slotQueryPaths:
-                query = f"{slot_query}/{head_slot}"
+                query = f"{slot_query}{head_slot}"
                 self.compare_responses(oracle, query)
                 time.sleep(0.5)
 

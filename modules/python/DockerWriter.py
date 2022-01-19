@@ -171,11 +171,11 @@ class TekuClientWriter(ClientWriter):
             str(self.client_config["debug-level"]),
             testnet_dir,
             node_dir,
-            str(self.client_config["start-p2p-port"] + self.curr_node),
-            str(self.client_config["start-metric-port"] + self.curr_node),
-            str(self.client_config["start-rest-port"] + self.curr_node),
-            str(self.get_ip()),
             web3_provider,
+            str(self.get_ip()),
+            str(int(self.client_config["start-p2p-port"]) + self.curr_node),
+            str(int(self.client_config["start-rest-port"]) + self.curr_node),
+            str(int(self.client_config["start-http-port"]) + self.curr_node),
         ]
 
 

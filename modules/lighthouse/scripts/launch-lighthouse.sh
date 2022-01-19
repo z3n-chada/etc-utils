@@ -27,8 +27,8 @@ lighthouse \
 	--enr-udp-port $P2P_PORT \
 	--enr-tcp-port $P2P_PORT \
 	--port $P2P_PORT \
-	--http-port $HTTP_PORT \
 	--eth1 --eth1-endpoints "$ETH1_ENDPOINT" \
+	--http --http-port $REST_PORT \
 	--http-address 0.0.0.0 \
 	--http-allow-origin "*" &
 
@@ -41,4 +41,4 @@ lighthouse \
     --validators-dir "$NODE_DIR/keys" \
     --secrets-dir "$NODE_DIR/secrets" \
 	--init-slashing-protection \
-	--beacon-nodes "http://localhost:$HTTP_PORT"
+	--beacon-nodes "http://localhost:$REST_PORT"
