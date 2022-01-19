@@ -50,6 +50,7 @@ class ConsensusStatusChecker(object):
         if client_addr is None:
             # just choose on.
             ip, ports = random.choice(list(self.clients.items()))
+        print(f"{ip} -> {ports}")
         response = self._get_with_retry(
             f"http://{ip}:{ports['http']}/eth/v1/beacon/genesis",
             retries=retries,
