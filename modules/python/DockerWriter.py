@@ -31,6 +31,7 @@ class ClientWriter(object):
     # inits for child classes.
     def config(self):
         return {
+            "container_name": self.name,
             "image": f"{self.image}:{self.tag}",
             "volumes": self.volumes,
             "networks": self._networking(),
@@ -44,6 +45,8 @@ class ClientWriter(object):
             config["stdin_open"] = True
         else:
             config["entrypoint"] = self._entrypoint()
+        if "environment" in self.global_config["docker"]:
+            config["environment"] = self.global_config["docker"]["environment"]
         return config
 
     def _networking(self):
@@ -318,18 +321,18 @@ class DockerComposeWriter(object):
                     raise Exception(
                         f"{client_writer.name} ip overlaps with: {self.registered_ips[client_writer.get_ip()]}"
                     )
-
-        for service in self.global_config["scripts"]:
-            client_config = self.global_config["scripts"][service]
-            if client_config["enabled"]:
-                client = service
-                for n in range(client_config["num-nodes"]):
-                    client_writer = ScriptWriter(
-                        self.global_config, client_config, client, n, self.docker
-                    )
-                    self.yml["services"][
-                        client_writer.name
-                    ] = client_writer.get_config()
+        if "scripts" in self.global_config:
+            for service in self.global_config["scripts"]:
+                client_config = self.global_config["scripts"][service]
+                if client_config["enabled"]:
+                    client = service
+                    for n in range(client_config["num-nodes"]):
+                        client_writer = ScriptWriter(
+                            self.global_config, client_config, client, n, self.docker
+                        )
+                        self.yml["services"][
+                            client_writer.name
+                        ] = client_writer.get_config()
 
     def write_to_file(self, out_file):
         with open(out_file, "w") as f:
