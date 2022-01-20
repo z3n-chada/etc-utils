@@ -14,6 +14,10 @@ WS_APIS=$7
 
 echo "testnet-password" > /data/geth-account-passwords.txt
 
+if [ ! -f "/data/testnet-ready" ]; then
+    sleep 1
+fi
+
 geth init \
     --datadir $GETH_DATA_DIR \
     $GENESIS_CONFIG
