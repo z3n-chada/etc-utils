@@ -63,6 +63,29 @@ class ClientWriter(object):
         raise Exception("over-ride this method")
 
 
+class BootstrapperWriter(ClientWriter):
+    def __init__(self, global_config, config_file):
+        client_config = {
+            "image": "etc-builder",
+            "tag": "latest",
+            "ip-start": "10.0.20.1",
+            "debug": False,
+        }
+        self.config_file = config_file
+        super().__init__(global_config, client_config, f"testnet-bootstrapper", 0)
+        self.out = self.config()
+
+    def _entrypoint(self):
+        return [
+            "python3",
+            "/source/modules/python/create_scenario.py",
+            "--config",
+            self.config_file,
+            "--docker",
+            "--no-docker-compose",
+        ]
+
+
 class GethClientWriter(ClientWriter):
     def __init__(self, global_config, client_config, curr_node):
         super().__init__(
@@ -342,6 +365,26 @@ class DockerComposeWriter(object):
 def create_docker_compose(global_config, out_file, docker):
     dcw = DockerComposeWriter(global_config, docker)
     dcw.add_services()
+    dcw.write_to_file(out_file)
+
+
+def create_bootstrap_docker_compose(global_config, out_file, config_file, docker):
+    """
+    Special purpose docker that has the create_scenario as the first
+    image to run. Allows for rapid redeployment and testing, as well
+    as other features like live deposits.
+    """
+    dcw = DockerComposeWriter(global_config, docker)
+    bsw = BootstrapperWriter(global_config, config_file)
+    bootstrapper = bsw.get_config()
+    bootstrapper["volumes"].append("./:/source/")
+    dcw.add_services()
+    # modify the services to depend on the bootstrapper.
+    services = list(dcw.yml["services"].keys())
+    for service in services:
+        dcw.yml["services"][service]["depends_on"] = [bsw.name]
+        dcw.yml["services"][bsw.name] = bootstrapper
+
     dcw.write_to_file(out_file)
 
 

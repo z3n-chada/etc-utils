@@ -38,4 +38,5 @@ RUN git clone https://github.com/protolambda/eth2-val-tools.git && \
     cd /git/eth2-val-tools && go install . && \
     cd /git/eth2-testnet-genesis && go install . && \
     ln -s /root/go/bin/eth2-val-tools /usr/local/bin/eth2-val-tools && \
-    ln -s /root/go/bin/eth2-testnet-genesis /usr/local/bin/eth2-testnet-genesis
+    ln -s /root/go/bin/eth2-testnet-genesis /usr/local/bin/eth2-testnet-genesis && \
+    go install github.com/wealdtech/ethereal/v2@latest
