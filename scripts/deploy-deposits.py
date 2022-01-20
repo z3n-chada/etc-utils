@@ -1,6 +1,8 @@
 import json
+import pathlib
 import random
 import subprocess
+import time
 
 from ruamel import yaml
 from web3.auto import w3
@@ -27,16 +29,16 @@ def create_deposit_data(global_config, args):
     withdrawl_mnemonic = global_config["pos-chain"]["accounts"]["withdrawl-mnemonic"]
     cmd = (
         f"eth2-val-tools deposit-data "
-        + f"--source-min {args.start_offset} --source-max {args.start_offset + args.num_deposits} "
+        + f"--source-min {int(args.start_offset)} --source-max {int(args.start_offset) + int(args.num_deposits)} "
         + f"--fork-version {global_config['pos-chain']['config']['deposit']['chain-id']} "
         + f'--validators-mnemonic "{validator_mnemonic}" '
         + f'--withdrawals-mnemonic "{withdrawl_mnemonic}" '
         + f"--as-json-list "
     )
-
+    print(cmd)
     x = subprocess.run(cmd, shell=True, capture_output=True)
     stdout_deposit_data = x.stdout
-
+    print(stdout_deposit_data)
     return stdout_deposit_data
 
 
@@ -57,6 +59,12 @@ def deploy_deposit(args):
 
     with open("/tmp/deposit_data", "wb") as f:
         f.write(deposit_data)
+
+    # wait for the connection to exist.
+    connection = pathlib.Path(args.geth_ipc)
+    while not connection.exists():
+        print("Waiting for geth ipc connection to open")
+        time.sleep(1)
 
     send_ethereal_beacon_deposit(
         global_config,

@@ -13,7 +13,7 @@ from GethGenesisWriter import create_geth_genesis
 from TestnetDirectoryGenerator import create_testnet_dirs
 
 
-def create_bootstrap_docker_compose(args):
+def create_bootstrap_docker_compose_scenario(args):
     with open(args.config, "r") as f:
         global_config = yaml.safe_load(f.read())
 
@@ -94,6 +94,6 @@ parser.add_argument(
 
 args = parser.parse_args()
 if args.bootstrap_mode:
-    create_bootstrap_docker_compose(args)
+    create_bootstrap_docker_compose_scenario(args)
 else:
     create_scenario(args)

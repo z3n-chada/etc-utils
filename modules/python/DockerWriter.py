@@ -252,11 +252,12 @@ class ScriptWriter(ClientWriter):
         else:
             file_ndx = "host"
 
-        for s in self.client_config["files"][file_ndx]:
-            src = self.client_config["files"][file_ndx][s]["src"]
-            dest = self.client_config["files"][file_ndx][s]["dest"]
-            print(f"Script writer copying {s} ({src} -> {dest})")
-            shutil.copy(src, dest)
+        if "files" in self.client_config:
+            for s in self.client_config["files"][file_ndx]:
+                src = self.client_config["files"][file_ndx][s]["src"]
+                dest = self.client_config["files"][file_ndx][s]["dest"]
+                print(f"Script writer copying {s} ({src} -> {dest})")
+                shutil.copy(src, dest)
 
     def _entrypoint(self):
 

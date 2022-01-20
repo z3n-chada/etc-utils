@@ -40,6 +40,8 @@ class ConsensusGenesisGenerator(object):
             "merge": ["phase0", "altair", "merge"],
         }
 
+        # how many pre-deployed validators.
+
     def _get_cmd(self, out_file):
         self._create_tmp_validator_yaml()
 
@@ -71,9 +73,15 @@ class ConsensusGenesisGenerator(object):
         return preset_args
 
     def _create_tmp_validator_yaml(self):
+        validator_data = self.global_config["pos-chain"]["accounts"]
         # eth2-testnet-genesis requires mnemonics to be in a yaml file.
-        mnemonic = self.global_config["pos-chain"]["accounts"]["validator-mnemonic"]
-        count = self.global_config["pos-chain"]["accounts"]["total-validators"]
+        mnemonic = validator_data["validator-mnemonic"]
+        if "num-predeployed-validators" in validator_data:
+            count = validator_data["num-predeployed-validators"]
+        else:
+            # if not specified just generate them all.
+            count = validator_data["total-validators"]
+
         with open(self.tmp_yaml, "w") as f:
             yaml.dump([{"mnemonic": mnemonic, "count": count}], f)
 
