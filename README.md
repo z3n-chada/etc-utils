@@ -17,6 +17,7 @@ Self contained mode creates a testnet bootstrapper that regenerates the testnet 
 2. mkdir shared-data/local\_testnet
 3. rm shared-data/testnet-ready
 4. docker-compose up --force-recreate
+
 To set up the docker-compose.yaml in self-contained mode do the following:
 1. sudo make clean
 2. make run-docker-config
