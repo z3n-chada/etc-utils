@@ -10,6 +10,10 @@ P2P_PORT=$6
 REST_PORT=$7
 HTTP_PORT=$8
 
+if [ ! -f "/data/testnet-ready" ]; then
+    sleep 1
+fi
+
 sleep 10 # wait for bootnode to come up
 
 if [ ! -f "$TESTNET_DIR/boot_enr.yaml" ]; then

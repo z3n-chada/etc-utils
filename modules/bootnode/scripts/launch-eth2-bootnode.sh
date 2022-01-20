@@ -6,6 +6,10 @@ API_PORT=$3
 PRIV_KEY=$4
 ENR_PATH=$5
 
+if [ ! -f "/data/testnet-ready" ]; then
+    sleep 1
+fi
+
 mkdir -p /data/local_testnet/bootnode/
 
 /data/scripts/delay-fetch-and-write-enr.sh "$IP_ADDRESS:$API_PORT/enr" $5 &
