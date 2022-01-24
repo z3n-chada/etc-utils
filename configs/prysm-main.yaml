@@ -3,7 +3,7 @@
 # specified.
 docker:
     network-name: "local-testnet"
-    ip-subnet: "10.0.20.0/16"
+    ip-subnet: "10.0.20.0/24"
     volumes: ['./shared-data:/data/']
     # for writing the docker-compose.yaml
     docker-docker-compose-file:  "/source/docker-compose.yaml" #wrt to docker config
