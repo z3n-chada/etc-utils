@@ -1,4 +1,4 @@
-# testing config file that maintains all possible configs.
+# Temporary drop in for teku testing.
 # Commented configs are yet to be implemented unless otherwise
 # specified.
 docker:
@@ -14,6 +14,7 @@ docker:
 # scenarios. (populated in create_scenarios.py)
 universal:
     now: 0xdeadbeef
+    ip-skip: 5 # should be equal to the number of possible clients
     merge-testnet: False #TODO: will probably require some renaming and moving things around.
 
     consensus-presets:
@@ -67,7 +68,7 @@ pow-chain:
         num-nodes: 1
         debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
         # arguments for running geth.
-        network-id: 0x01000666
+        network-id: 0x02000666
         http-port: 8545
         ws-port: 8546
         http-apis: "net,eth,web3,personal"
@@ -75,7 +76,7 @@ pow-chain:
 
     geth-genesis:
         genesis-delay: 10 # seconds from now for genesis timestamp.
-        chain-id: 0x01000666
+        chain-id: 0x02000666
         homesteadBlock: 0
         eip150Block: 0
         eip155Block: 0
@@ -119,11 +120,11 @@ pos-chain:
     config:
         preset: 'mainnet'
         genesis-delay: 100
-        genesis-fork-version: 0x01000666
-        genesis-fork-name: 'phase0' # which fork ssz to create. (phase0, altair, merge...)
+        genesis-fork-version: 0x02000666
+        genesis-fork-name: 'altair' # which fork ssz to create. (phase0, altair, merge...)
         forks:
             altair-fork-version: 0x02000666
-            altair-fork-epoch: 4
+            altair-fork-epoch: 0
 
             merge-fork-version: 0x03000666
             merge-fork-epoch: 18446744073709551615
@@ -132,11 +133,9 @@ pos-chain:
             sharding-fork-epoch: 18446744073709551615
 
         deposit:
-            chain-id: 0x01000666
-            network-id: 0x01000666
+            chain-id: 0x02000666
+            network-id: 0x02000666
             contract-address: "0x8c594691c0e592ffa21f153a16ae41db5befcaaa"
-
-    # similiar to clients but you need to specify the entrypoint
 
     bootnodes:
         # only one implemented currently..
@@ -153,30 +152,25 @@ pos-chain:
             bootnode-enr-file: "/data/local_testnet/bootnode/enr.dat" #this is only touched/modified in a docker
 
     clients:
-        prysm:
-            client-name: "prysm"
+        teku:
             # docker specefic args
-            # TODO: container name + env-vars
-            ip-start: "10.0.20.4"
-            image: "prysm-client"
+            client-name: "teku"
+            image: "teku-client"
             tag: "latest"
             debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
+            ip-start: "10.0.20.6"
             # client specific args that can't be derrived from this config file.
+            debug-level: "debug"
             start-http-port: 9000
             start-p2p-port: 8000
-            start-rest-port: 7000
-            pow-port: 8545 # TODO
-            docker-testnet-dir: "/data/local_testnet/prysm"
-            host-testnet-dir: "shared-data/local_testnet/prysm"
-            validator-password: "testnet-password"
-            host-wallet-path: "shared-data/local_testnet/prysm/wallet-password.txt"
-            docker-wallet-path: "/data/local_testnet/prysm/wallet-password.txt"
-            # specify which set of keys to use.
-            # each beacon-validator pair consists of int(num-validators/num-beacon-nodes)
+            start-rest-port: 4000
+            pow-port: 8545 # TODO:
+            docker-testnet-dir: "/data/local_testnet/teku"
+            host-testnet-dir: "shared-data/local_testnet/teku"
+
             validator-offset-start: 0
             num-nodes: 8
             num-validators: 80
-
 
     files:
         docker-genesis-config: "/data/local_testnet/eth2-config.yaml"
@@ -188,11 +182,10 @@ pos-chain:
         tmp-validator-config: "/tmp/validators.yaml"
 
     accounts:
-        #mnemonics go here so we can pre-load the genesis state with deposits.
         validator-mnemonic: "ocean style run case glory clip into nature guess jacket document firm fiscal hello kite disagree symptom tide net coral envelope wink render festival" 
         withdrawl-mnemonic: "scatter supreme field crazy unveil chronic favorite middle front umbrella mutual gentle word wild economy dress whale whip method office report eternal garment parrot"
         # these must be divide evenly.
-        total-beacon-nodes: 8
+        total-beacon-nodes: 20
         total-validators: 80
 
 scripts:
@@ -213,12 +206,12 @@ scripts:
                     src: "/source/scripts/status_checker.py"
                     dest: "/data/scripts/status_checker.py"
                 config:
-                    src: "/source/configs/prysm-main.yaml" #this file.
+                    src: "/source/configs/teku-altair-mainnet.yaml" #this file.
                     dest: "/data/testnet-config.yaml" 
             host:
                 script:
                     src: "scripts/status_checker.py"
                     dest: "shared-data/scripts/status_checker.py"
                 config:
-                    src: "configs/prysm-main.yaml" #this file.
+                    src: "configs/teku-altair-mainnet.yaml" #this file.
                     dest: "shared-data/testnet-config.yaml" 

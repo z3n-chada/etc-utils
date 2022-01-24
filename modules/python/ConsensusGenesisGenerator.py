@@ -20,7 +20,7 @@ class ConsensusGenesisGenerator(object):
         self.preset_name = self.global_config["pos-chain"]["config"]["preset"]
 
         self.possible_forks = ["phase0", "altair", "merge", "sharding"]
-        self.implemented_forks = ["phase0"]
+        self.implemented_forks = ["phase0", "altair"]
 
         if not self.start_fork in self.possible_forks:
             raise Exception(
@@ -92,6 +92,7 @@ class ConsensusGenesisGenerator(object):
         self._delete_tmp_validator_yaml()
 
     def write_to_file(self, out_file):
+        print(self._get_cmd(out_file))
         subprocess.run(self._get_cmd(out_file))
 
 

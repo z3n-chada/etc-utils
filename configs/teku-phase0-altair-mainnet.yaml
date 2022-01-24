@@ -1,4 +1,4 @@
-# testing config file that maintains all possible configs.
+# Temporary drop in for teku testing.
 # Commented configs are yet to be implemented unless otherwise
 # specified.
 docker:
@@ -152,24 +152,22 @@ pos-chain:
             bootnode-enr-file: "/data/local_testnet/bootnode/enr.dat" #this is only touched/modified in a docker
 
     clients:
-        lighthouse-main:
-            client-name: "lighthouse"
+        teku:
             # docker specefic args
-            # TODO: container name + env-vars
-            ip-start: "10.0.20.4"
-            image: "lighthouse-client"
+            client-name: "teku"
+            image: "teku-client"
             tag: "latest"
             debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
+            ip-start: "10.0.20.6"
             # client specific args that can't be derrived from this config file.
-            start-http-port: 7000
-            start-p2p-port: 6000
-            start-rest-port: 5000
-            pow-port: 8545 # TODO
-            docker-testnet-dir: "/data/local_testnet/lighthouse"
-            host-testnet-dir: "shared-data/local_testnet/lighthouse"
-            debug-level: "info" # logging output level of the beacon and validator node.
-            # specify which set of keys to use.
-            # each beacon-validator pair consists of int(num-validators/num-beacon-nodes)
+            debug-level: "debug"
+            start-http-port: 9000
+            start-p2p-port: 8000
+            start-rest-port: 4000
+            pow-port: 8545 # TODO:
+            docker-testnet-dir: "/data/local_testnet/teku"
+            host-testnet-dir: "shared-data/local_testnet/teku"
+
             validator-offset-start: 0
             num-nodes: 8
             num-validators: 80
@@ -184,14 +182,12 @@ pos-chain:
         tmp-validator-config: "/tmp/validators.yaml"
 
     accounts:
-        #mnemonics go here so we can pre-load the genesis state with deposits.
         validator-mnemonic: "ocean style run case glory clip into nature guess jacket document firm fiscal hello kite disagree symptom tide net coral envelope wink render festival" 
         withdrawl-mnemonic: "scatter supreme field crazy unveil chronic favorite middle front umbrella mutual gentle word wild economy dress whale whip method office report eternal garment parrot"
         # these must be divide evenly.
-        total-beacon-nodes: 8
+        total-beacon-nodes: 20
         total-validators: 80
 
-#optional
 scripts:
     status-checker: # the name used by the ScriptWriter.
         enabled: True
@@ -210,12 +206,12 @@ scripts:
                     src: "/source/scripts/status_checker.py"
                     dest: "/data/scripts/status_checker.py"
                 config:
-                    src: "/source/configs/lighthouse-main.yaml" #this file.
+                    src: "/source/configs/teku-phase0-altair-mainnet.yaml" #this file.
                     dest: "/data/testnet-config.yaml" 
             host:
                 script:
                     src: "scripts/status_checker.py"
                     dest: "shared-data/scripts/status_checker.py"
                 config:
-                    src: "configs/lighthouse-main.yaml" #this file.
+                    src: "configs/teku-phase0-altair-mainnet.yaml" #this file.
                     dest: "shared-data/testnet-config.yaml" 

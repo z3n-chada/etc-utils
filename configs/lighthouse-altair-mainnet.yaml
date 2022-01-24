@@ -5,7 +5,6 @@ docker:
     network-name: "local-testnet"
     ip-subnet: "10.0.20.0/24"
     volumes: ['./shared-data:/data/']
-    environment: ['ENV_VAR1=1', 'ENV_VAR2=2']
     # for writing the docker-compose.yaml
     docker-docker-compose-file:  "/source/docker-compose.yaml" #wrt to docker config
     host-docker-compose-file: "docker-compose.yaml"
@@ -69,7 +68,7 @@ pow-chain:
         num-nodes: 1
         debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
         # arguments for running geth.
-        network-id: 0x01000666
+        network-id: 0x02000666
         http-port: 8545
         ws-port: 8546
         http-apis: "net,eth,web3,personal"
@@ -77,7 +76,7 @@ pow-chain:
 
     geth-genesis:
         genesis-delay: 10 # seconds from now for genesis timestamp.
-        chain-id: 0x01000666
+        chain-id: 0x02000666
         homesteadBlock: 0
         eip150Block: 0
         eip155Block: 0
@@ -121,11 +120,11 @@ pos-chain:
     config:
         preset: 'mainnet'
         genesis-delay: 100
-        genesis-fork-version: 0x01000666
-        genesis-fork-name: 'phase0' # which fork ssz to create. (phase0, altair, merge...)
+        genesis-fork-version: 0x02000666
+        genesis-fork-name: 'altair' # which fork ssz to create. (phase0, altair, merge...)
         forks:
             altair-fork-version: 0x02000666
-            altair-fork-epoch: 4
+            altair-fork-epoch: 0
 
             merge-fork-version: 0x03000666
             merge-fork-epoch: 18446744073709551615
@@ -134,8 +133,8 @@ pos-chain:
             sharding-fork-epoch: 18446744073709551615
 
         deposit:
-            chain-id: 0x01000666
-            network-id: 0x01000666
+            chain-id: 0x02000666
+            network-id: 0x02000666
             contract-address: "0x8c594691c0e592ffa21f153a16ae41db5befcaaa"
 
     bootnodes:
@@ -153,55 +152,11 @@ pos-chain:
             bootnode-enr-file: "/data/local_testnet/bootnode/enr.dat" #this is only touched/modified in a docker
 
     clients:
-        prysm:
-            client-name: "prysm"
-            # docker specefic args
-            # TODO: container name + env-vars
-            ip-start: "10.0.20.4"
-            image: "prysm-client"
-            tag: "latest"
-            debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
-            # client specific args that can't be derrived from this config file.
-            start-http-port: 9000
-            start-p2p-port: 8000
-            start-rest-port: 7000
-            pow-port: 8545 # TODO
-            docker-testnet-dir: "/data/local_testnet/prysm"
-            host-testnet-dir: "shared-data/local_testnet/prysm"
-            validator-password: "testnet-password"
-            host-wallet-path: "shared-data/local_testnet/prysm/wallet-password.txt"
-            docker-wallet-path: "/data/local_testnet/prysm/wallet-password.txt"
-            # specify which set of keys to use.
-            # each beacon-validator pair consists of int(num-validators/num-beacon-nodes)
-            validator-offset-start: 0
-            num-nodes: 4
-            num-validators: 40
-
-        teku:
-            # docker specefic args
-            client-name: "teku"
-            image: "teku-client"
-            tag: "latest"
-            debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
-            ip-start: "10.0.20.50"
-            # client specific args that can't be derrived from this config file.
-            debug-level: "debug"
-            start-http-port: 9000
-            start-p2p-port: 8000
-            start-rest-port: 4000
-            pow-port: 8545 # TODO:
-            docker-testnet-dir: "/data/local_testnet/teku"
-            host-testnet-dir: "shared-data/local_testnet/teku"
-
-            validator-offset-start: 40
-            num-nodes: 2
-            num-validators: 20
-
-        lighthouse:
+        lighthouse-main:
             client-name: "lighthouse"
             # docker specefic args
             # TODO: container name + env-vars
-            ip-start: "10.0.20.80"
+            ip-start: "10.0.20.4"
             image: "lighthouse-client"
             tag: "latest"
             debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
@@ -215,9 +170,10 @@ pos-chain:
             debug-level: "info" # logging output level of the beacon and validator node.
             # specify which set of keys to use.
             # each beacon-validator pair consists of int(num-validators/num-beacon-nodes)
-            validator-offset-start: 60
-            num-nodes: 2
-            num-validators: 20
+            validator-offset-start: 0
+            num-nodes: 8
+            num-validators: 80
+
     files:
         docker-genesis-config: "/data/local_testnet/eth2-config.yaml"
         host-genesis-config: "eth2-config.yaml"
@@ -235,6 +191,7 @@ pos-chain:
         total-beacon-nodes: 8
         total-validators: 80
 
+#optional
 scripts:
     status-checker: # the name used by the ScriptWriter.
         enabled: True
@@ -253,12 +210,12 @@ scripts:
                     src: "/source/scripts/status_checker.py"
                     dest: "/data/scripts/status_checker.py"
                 config:
-                    src: "/source/configs/testing-config.yaml" #this file.
+                    src: "/source/configs/lighthouse-altair-mainnet.yaml" #this file.
                     dest: "/data/testnet-config.yaml" 
             host:
                 script:
                     src: "scripts/status_checker.py"
                     dest: "shared-data/scripts/status_checker.py"
                 config:
-                    src: "configs/testing-config.yaml" #this file.
+                    src: "configs/lighthouse-altair-mainnet.yaml" #this file.
                     dest: "shared-data/testnet-config.yaml" 
