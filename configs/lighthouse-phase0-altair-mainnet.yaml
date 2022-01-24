@@ -210,12 +210,12 @@ scripts:
                     src: "/source/scripts/status_checker.py"
                     dest: "/data/scripts/status_checker.py"
                 config:
-                    src: "/source/configs/lighthouse-main.yaml" #this file.
+                    src: "configs/lighthouse-phase0-altair-mainnet.yaml" #this file.
                     dest: "/data/testnet-config.yaml" 
             host:
                 script:
                     src: "scripts/status_checker.py"
                     dest: "shared-data/scripts/status_checker.py"
                 config:
-                    src: "configs/lighthouse-main.yaml" #this file.
+                    src: "configs/lighthouse-phase0-altair-mainnet.yaml" #this file.
                     dest: "shared-data/testnet-config.yaml" 

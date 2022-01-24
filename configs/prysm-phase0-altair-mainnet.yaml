@@ -213,12 +213,12 @@ scripts:
                     src: "/source/scripts/status_checker.py"
                     dest: "/data/scripts/status_checker.py"
                 config:
-                    src: "/source/configs/prysm-main.yaml" #this file.
+                    src: "configs/prysm-phase0-altair-mainnet.yaml" #this file.
                     dest: "/data/testnet-config.yaml" 
             host:
                 script:
                     src: "scripts/status_checker.py"
                     dest: "shared-data/scripts/status_checker.py"
                 config:
-                    src: "configs/prysm-main.yaml" #this file.
+                    src: "configs/prysm-phase0-altair-mainnet.yaml" #this file.
                     dest: "shared-data/testnet-config.yaml" 
