@@ -14,9 +14,9 @@ WS_APIS=$7
 
 echo "testnet-password" > /data/geth-account-passwords.txt
 
-if [ ! -f "/data/testnet-ready" ]; then
+while [ ! -f "/data/testnet-ready" ]; do
     sleep 1
-fi
+done
 
 geth init \
     --datadir $GETH_DATA_DIR \

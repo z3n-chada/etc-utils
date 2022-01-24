@@ -10,9 +10,9 @@ P2P_PORT=$6
 REST_PORT=$7
 HTTP_PORT=$8
 
-if [ ! -f "/data/testnet-ready" ]; then
+while [ ! -f "/data/testnet-ready" ]; do
     sleep 1
-fi
+done
 
 sleep 10 # wait for bootnode to come up
 
