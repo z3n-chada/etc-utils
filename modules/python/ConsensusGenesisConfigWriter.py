@@ -1,11 +1,12 @@
 from ruamel import yaml
 
+
 class ConsensusConfigWriter(object):
     def __init__(self, global_config):
-        cc = global_config['pos-chain']['config'] # consensus config
-        preset = str(cc['preset'])
+        cc = global_config["pos-chain"]["config"]  # consensus config
+        preset = str(cc["preset"])
         print(preset)
-        pc = global_config['universal']['consensus-presets'][preset] #preset config
+        pc = global_config["universal"]["consensus-presets"][preset]  # preset config
         self.yml = f"""
 PRESET_BASE: {cc['preset']}
 
@@ -27,8 +28,11 @@ GENESIS_DELAY: {cc['genesis-delay']}
 ALTAIR_FORK_VERSION: 0x{cc['forks']['altair-fork-version']:08x}
 ALTAIR_FORK_EPOCH: {cc['forks']['altair-fork-epoch']}
 # Merge
-MERGE_FORK_VERSION: 0x{cc['forks']['merge-fork-version']:08x}
-MERGE_FORK_EPOCH: {cc['forks']['merge-fork-epoch']}
+# MERGE_FORK_VERSION: 0x{cc['forks']['merge-fork-version']:08x}
+# MERGE_FORK_EPOCH: {cc['forks']['merge-fork-epoch']}
+# Bellatrix (aka merge)
+BELLATRIX_FORK_VERSION: 0x{cc['forks']['merge-fork-version']:08x}
+BELLATRIX_FORK_EPOCH: {cc['forks']['merge-fork-epoch']}
 # Sharding
 SHARDING_FORK_VERSION: 0x{cc['forks']['sharding-fork-version']:08x}
 SHARDING_FORK_EPOCH: {cc['forks']['sharding-fork-epoch']}
@@ -59,6 +63,15 @@ MIN_PER_EPOCH_CHURN_LIMIT: 4
 # [customized] scale queue churn at much lower validator counts for testing
 CHURN_LIMIT_QUOTIENT: {pc['churn-limit-quotient']}
 
+# Transition
+# ---------------------------------------------------------------
+# TBD, 2**256-2**10 is a placeholder
+TERMINAL_TOTAL_DIFFICULTY: 115792089237316195423570985008687907853269984665640564039457584007913129638912
+# By default, don't use these params
+TERMINAL_BLOCK_HASH: 0x0000000000000000000000000000000000000000000000000000000000000042
+TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH: 18446744073709551615
+
+
 # Deposit contract
 # ---------------------------------------------------------------
 # Execution layer chain
@@ -67,13 +80,16 @@ DEPOSIT_NETWORK_ID: {cc['deposit']['network-id']}
 # Allocated in Execution-layer genesis
 DEPOSIT_CONTRACT_ADDRESS: {cc['deposit']['contract-address']}
 """
+
     def write_to_file(self, out_file):
         with open(out_file, "w") as f:
             f.write(self.yml)
 
+
 def create_consensus_config(global_config, out_file):
     ccw = ConsensusConfigWriter(global_config)
     ccw.write_to_file(out_file)
+
 
 if __name__ == "__main__":
     import argparse

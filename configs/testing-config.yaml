@@ -3,7 +3,7 @@
 # specified.
 docker:
     network-name: "local-testnet"
-    ip-subnet: "10.0.20.0/16"
+    ip-subnet: "10.0.20.0/24"
     volumes: ['./shared-data:/data/']
     environment: ['ENV_VAR1=1', 'ENV_VAR2=2']
     # for writing the docker-compose.yaml
