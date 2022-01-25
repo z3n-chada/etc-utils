@@ -10,6 +10,7 @@ base:
 	cp modules/prysm/scripts/* shared-data/scripts/
 	cp modules/lighthouse/scripts/* shared-data/scripts/
 	cp modules/teku/scripts/* shared-data/scripts/
+	cp scripts/* shared-data/scripts/
 
 client-dockers:
 	cd modules/geth/docker && ./build_docker.sh
