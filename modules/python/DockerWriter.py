@@ -134,7 +134,7 @@ class PrysmClientWriter(ClientWriter):
             self.global_config["pow-chain"]["contracts"]["deposit-contract-address"]
         )
         return [
-            "/data/scripts/launch-prysm.sh",
+            str(self.client_config["entrypoint"]),
             testnet_dir,
             node_dir,
             web3_provider,
