@@ -79,7 +79,7 @@ class BootstrapperWriter(ClientWriter):
     def _entrypoint(self):
         ep = [
             "python3",
-            "/source/modules/python/create_scenario.py",
+            "/source/create_scenario.py",
             "--config",
             self.config_file,
             "--docker",
