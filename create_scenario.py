@@ -6,11 +6,11 @@ import time
 
 import ruamel.yaml as yaml
 
-from ConsensusGenesisConfigWriter import create_consensus_config
-from ConsensusGenesisGenerator import create_genesis_ssz
-from DockerWriter import create_bootstrap_docker_compose, create_docker_compose
-from GethGenesisWriter import create_geth_genesis
-from TestnetDirectoryGenerator import create_testnet_dirs
+from modules.python.ConsensusGenesisConfigWriter import create_consensus_config
+from modules.python.ConsensusGenesisGenerator import create_genesis_ssz
+from modules.python.DockerWriter import create_bootstrap_docker_compose, create_docker_compose
+from modules.python.GethGenesisWriter import create_geth_genesis
+from modules.python.TestnetDirectoryGenerator import create_testnet_dirs
 
 
 def create_bootstrap_docker_compose_scenario(args):
@@ -23,13 +23,39 @@ def create_bootstrap_docker_compose_scenario(args):
         docker_compose_out = global_config["docker"]["host-docker-compose-file"]
 
     create_bootstrap_docker_compose(
-        global_config, docker_compose_out, args.config, args.docker
+        global_config, docker_compose_out, args.config, args.docker, args.clean_last_run
     )
+
+
+def clean_last_run(args):
+    with open(args.config, "r") as f:
+        global_config = yaml.safe_load(f.read())
+
+    if args.docker:
+        testnet_directory = pathlib.Path(
+            global_config["pow-chain"]["files"]["docker-geth-data-dir"]
+        ).parents[0]
+    else:
+        testnet_directory = pathlib.Path(
+            global_config["pow-chain"]["files"]["host-geth-data-dir"]
+        ).parents[0]
+
+    if testnet_directory.exists():
+        shutil.rmtree(str(testnet_directory))
+    testnet_directory.mkdir()
+
+    testnet_ready_file = testnet_directory.parents[0].joinpath("testnet-ready")
+
+    if testnet_ready_file.exists():
+        testnet_ready_file.unlink()
 
 
 def create_scenario(args):
     with open(args.config, "r") as f:
         global_config = yaml.safe_load(f.read())
+
+    if args.clean_last_run:
+        clean_last_run(args)
 
     now = int(time.time())
     global_config["universal"]["now"] = now
@@ -92,7 +118,15 @@ parser.add_argument(
     help="Skip outputting a docker-compose.yaml",
 )
 
+parser.add_argument(
+    "--clean-last-run",
+    dest="clean_last_run",
+    action="store_true",
+    help="remove old data directories before starting",
+)
+
 args = parser.parse_args()
+
 if args.bootstrap_mode:
     create_bootstrap_docker_compose_scenario(args)
 else:
