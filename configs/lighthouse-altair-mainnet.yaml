@@ -73,6 +73,7 @@ pow-chain:
         ws-port: 8546
         http-apis: "net,eth,web3,personal"
         ws-apis: "net,eth,web3,personal"
+        entrypoint: "/data/scripts/launch-phase0-clique-geth.sh" #wrt to docker.
 
     geth-genesis:
         genesis-delay: 10 # seconds from now for genesis timestamp.
