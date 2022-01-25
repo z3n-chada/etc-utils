@@ -64,19 +64,20 @@ class ClientWriter(object):
 
 
 class BootstrapperWriter(ClientWriter):
-    def __init__(self, global_config, config_file):
+    def __init__(self, global_config, config_file, clean=True):
         client_config = {
             "image": "etc-builder",
             "tag": "latest",
             "ip-start": "10.0.20.1",
             "debug": False,
         }
+        self.clean_up = clean
         self.config_file = config_file
         super().__init__(global_config, client_config, f"testnet-bootstrapper", 0)
         self.out = self.config()
 
     def _entrypoint(self):
-        return [
+        ep = [
             "python3",
             "/source/modules/python/create_scenario.py",
             "--config",
@@ -84,6 +85,9 @@ class BootstrapperWriter(ClientWriter):
             "--docker",
             "--no-docker-compose",
         ]
+        if self.clean_up:
+            ep.append("--clean-last-run")
+        return ep
 
 
 class GethClientWriter(ClientWriter):
@@ -369,14 +373,16 @@ def create_docker_compose(global_config, out_file, docker):
     dcw.write_to_file(out_file)
 
 
-def create_bootstrap_docker_compose(global_config, out_file, config_file, docker):
+def create_bootstrap_docker_compose(
+    global_config, out_file, config_file, docker, clean
+):
     """
     Special purpose docker that has the create_scenario as the first
     image to run. Allows for rapid redeployment and testing, as well
     as other features like live deposits.
     """
     dcw = DockerComposeWriter(global_config, docker)
-    bsw = BootstrapperWriter(global_config, config_file)
+    bsw = BootstrapperWriter(global_config, config_file, clean)
     bootstrapper = bsw.get_config()
     bootstrapper["volumes"].append("./:/source/")
     dcw.add_services()
