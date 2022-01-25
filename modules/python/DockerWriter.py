@@ -194,15 +194,14 @@ class TekuClientWriter(ClientWriter):
         ETH1_ENDPOINT=$7
         """
         testnet_dir = str(self.client_config["docker-testnet-dir"])
-        node_dir = f"{testnet_dir}/node_{self.curr_node}"
         geth_config = self.global_config["pow-chain"]["geth"]
-        web3_provider = f'http://{geth_config["ip-start"]}:{geth_config["http-port"]}'
+
         return [
-            "/data/scripts/launch-teku.sh",
+            str(self.client_config["entrypoint"]),
             str(self.client_config["debug-level"]),
-            testnet_dir,
-            node_dir,
-            web3_provider,
+            str(self.client_config["docker-testnet-dir"]),
+            f"{testnet_dir}/node_{self.curr_node}",
+            f'http://{geth_config["ip-start"]}:{geth_config["http-port"]}',
             str(self.get_ip()),
             str(int(self.client_config["start-p2p-port"]) + self.curr_node),
             str(int(self.client_config["start-rest-port"]) + self.curr_node),
