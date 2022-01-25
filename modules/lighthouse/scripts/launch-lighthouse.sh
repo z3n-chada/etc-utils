@@ -9,6 +9,8 @@ IP_ADDR=$5
 P2P_PORT=$6
 REST_PORT=$7
 HTTP_PORT=$8
+TESTNET_IP_RANGE=$9
+
 
 while [ ! -f "/data/testnet-ready" ]; do
     sleep 1

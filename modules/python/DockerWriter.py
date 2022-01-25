@@ -99,7 +99,16 @@ class GethClientWriter(ClientWriter):
 
     def _entrypoint(self):
         """
-        ./launch-geth <datadir> <genesis.json> <network_id> <http port> <http apis> <ws_port> <ws_apis>
+        Usage:
+        GETH_DATA_DIR
+        GENESIS_CONFIG
+        NETWORK_ID
+        HTTP_PORT
+        HTTP_APIS
+        WS_PORT
+        WS_APIS
+        IP_ADDR
+        TESTNET_IP_RANGE
         """
         pow_configs = self.global_config["pow-chain"]
         return [
@@ -111,6 +120,8 @@ class GethClientWriter(ClientWriter):
             str(self.client_config["http-apis"]),
             str(self.client_config["ws-port"]),
             str(self.client_config["ws-apis"]),
+            str(self.get_ip()),
+            str(self.global_config["docker"]["ip-subnet"]),
         ]
 
 
@@ -171,6 +182,9 @@ class LighthouseClientWriter(ClientWriter):
             str(int(self.client_config["start-p2p-port"]) + self.curr_node),
             str(int(self.client_config["start-rest-port"]) + self.curr_node),
             str(int(self.client_config["start-http-port"]) + self.curr_node),
+            str(self.global_config["docker"]["ip-subnet"]),
+            str(geth_config["network-id"]),
+            str(int(self.client_config["pow-port"])),
         ]
 
 

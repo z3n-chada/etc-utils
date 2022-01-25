@@ -15,7 +15,7 @@ docker:
 universal:
     now: 0xdeadbeef
     ip-skip: 5 # should be equal to the number of possible clients
-    merge-testnet: False #TODO: will probably require some renaming and moving things around.
+    merge-testnet: True
 
     consensus-presets:
         #the mainnet preset we use
@@ -68,17 +68,17 @@ pow-chain:
         num-nodes: 1
         debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
         # arguments for running geth.
-        network-id: 0x02000666
+        network-id: 0x03000666
         http-port: 8545
         ws-port: 8546
-        http-apis: "net,eth,web3,personal"
-        ws-apis: "net,eth,web3,personal"
-        entrypoint: "/data/scripts/launch-phase0-clique-geth.sh" #wrt to docker.
+        http-apis: "engine,net,eth,debug,txpool"
+        ws-apis: "engine,net,eth,debug,txpool"
+        entrypoint: "/data/scripts/launch-merge-geth.sh" #wrt to docker.
 
     geth-genesis:
         genesis-delay: 10 # seconds from now for genesis timestamp.
         config:
-          chainId: 0x02000666
+          chainId: 0x03000666
           homesteadBlock: 0
           eip150Block: 0
           eip155Block: 0
@@ -89,7 +89,7 @@ pow-chain:
           istanbulBlock: 0
           berlinBlock: 0
           londonBlock: 0
-          mergeForkBlock: 10000
+          mergeForkBlock: 0
           terminalTotalDifficulty: 5000000000
 
     accounts:
@@ -102,7 +102,7 @@ pow-chain:
             "m/44'/60'/0'/0/3" : "10000"
 
     clique:
-        enabled: True
+        enabled: False
         #see the scripts folder to dump necessary files for keys
         # 0x stripped.
         signer: "51Dd070D1f6f8dB48CA5b0E47D7e899aea6b1AF5"
@@ -125,21 +125,21 @@ pos-chain:
     config:
         preset: 'mainnet'
         genesis-delay: 100
-        genesis-fork-version: 0x02000666
-        genesis-fork-name: 'altair' # which fork ssz to create. (phase0, altair, merge...)
+        genesis-fork-version: 0x03000666
+        genesis-fork-name: 'merge' # which fork ssz to create. (phase0, altair, merge...)
         forks:
             altair-fork-version: 0x02000666
             altair-fork-epoch: 0
 
-            merge-fork-version: 0x03000666
-            merge-fork-epoch: 18446744073709551615
+            merge-fork-version: 0x03000666 # (bellatrix)
+            merge-fork-epoch: 0
 
             sharding-fork-version: 0x04000666
             sharding-fork-epoch: 18446744073709551615
 
         deposit:
-            chain-id: 0x02000666
-            network-id: 0x02000666
+            chain-id: 0x03000666
+            network-id: 0x03000666
             contract-address: "0x8c594691c0e592ffa21f153a16ae41db5befcaaa"
 
     bootnodes:
@@ -160,20 +160,19 @@ pos-chain:
         lighthouse-main:
             client-name: "lighthouse"
             # docker specefic args
-            # TODO: container name + env-vars
             ip-start: "10.0.20.4"
             image: "lighthouse-client"
             tag: "latest"
             debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
             # client specific args that can't be derrived from this config file.
-            entrypoint: "/data/scripts/launch-lighthouse.sh" # wrt to docker
+            entrypoint: "/data/scripts/launch-merge-lighthouse.sh" # wrt to docker
             start-http-port: 7000
             start-p2p-port: 6000
             start-rest-port: 5000
-            pow-port: 8545 # TODO
+            pow-port: 8545
             docker-testnet-dir: "/data/local_testnet/lighthouse"
             host-testnet-dir: "shared-data/local_testnet/lighthouse"
-            debug-level: "info" # logging output level of the beacon and validator node.
+            debug-level: "debug" # logging output level of the beacon and validator node.
             # specify which set of keys to use.
             # each beacon-validator pair consists of int(num-validators/num-beacon-nodes)
             validator-offset-start: 0
@@ -216,12 +215,12 @@ scripts:
                     src: "/source/scripts/status_checker.py"
                     dest: "/data/scripts/status_checker.py"
                 config:
-                    src: "/source/configs/lighthouse-altair-mainnet.yaml" #this file.
+                    src: "/source/configs/lighthouse-merge-mainnet.yaml" #this file.
                     dest: "/data/testnet-config.yaml" 
             host:
                 script:
                     src: "scripts/status_checker.py"
                     dest: "shared-data/scripts/status_checker.py"
                 config:
-                    src: "configs/lighthouse-altair-mainnet.yaml" #this file.
+                    src: "configs/lighthouse-merge-mainnet.yaml" #this file.
                     dest: "shared-data/testnet-config.yaml" 
