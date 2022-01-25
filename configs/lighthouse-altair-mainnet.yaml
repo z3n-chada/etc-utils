@@ -76,16 +76,20 @@ pow-chain:
 
     geth-genesis:
         genesis-delay: 10 # seconds from now for genesis timestamp.
-        chain-id: 0x02000666
-        homesteadBlock: 0
-        eip150Block: 0
-        eip155Block: 0
-        eip158Block: 0
-        byzantiumBlock: 0
-        constantinopleBlock: 0
-        petersburgBlock: 0
-        istanbulBlock: 0
-        berlinBlock: 0
+        config:
+          chainId: 0x02000666
+          homesteadBlock: 0
+          eip150Block: 0
+          eip155Block: 0
+          eip158Block: 0
+          byzantiumBlock: 0
+          constantinopleBlock: 0
+          petersburgBlock: 0
+          istanbulBlock: 0
+          berlinBlock: 0
+          londonBlock: 0
+          mergeForkBlock: 10000
+          terminalTotalDifficulty: 5000000000
 
     accounts:
         eth1-account-mnemonic: "cat swing flag economy stadium alone churn speed unique patch report train"
@@ -161,6 +165,7 @@ pos-chain:
             tag: "latest"
             debug: False #sets entrypoint to /bin/bash and opens stdin and tty.
             # client specific args that can't be derrived from this config file.
+            entrypoint: "/data/scripts/launch-lighthouse.sh" # wrt to docker
             start-http-port: 7000
             start-p2p-port: 6000
             start-rest-port: 5000

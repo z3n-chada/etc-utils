@@ -101,10 +101,11 @@ class GethClientWriter(ClientWriter):
         """
         ./launch-geth <datadir> <genesis.json> <network_id> <http port> <http apis> <ws_port> <ws_apis>
         """
+        pow_configs = self.global_config["pow-chain"]
         return [
-            "/data/scripts/launch-geth.sh",
-            str(self.global_config["pow-chain"]["files"]["docker-geth-data-dir"]),
-            str(self.global_config["pow-chain"]["files"]["docker-eth1-genesis-file"]),
+            str(self.client_config["entrypoint"]),
+            str(pow_configs["files"]["docker-geth-data-dir"]),
+            str(pow_configs["files"]["docker-eth1-genesis-file"]),
             str(self.client_config["network-id"]),
             str(self.client_config["http-port"]),
             str(self.client_config["http-apis"]),
@@ -133,7 +134,7 @@ class PrysmClientWriter(ClientWriter):
             self.global_config["pow-chain"]["contracts"]["deposit-contract-address"]
         )
         return [
-            "/data/scripts/launch-prysm.sh",
+            str(self.client_config["entrypoint"]),
             testnet_dir,
             node_dir,
             web3_provider,
@@ -158,16 +159,14 @@ class LighthouseClientWriter(ClientWriter):
         IP_ADDR ETH1_ENDPOINT
         """
         testnet_dir = str(self.client_config["docker-testnet-dir"])
-        node_dir = f"{testnet_dir}/node_{self.curr_node}"
         geth_config = self.global_config["pow-chain"]["geth"]
-        web3_provider = f'http://{geth_config["ip-start"]}:{geth_config["http-port"]}'
 
         return [
-            "/data/scripts/launch-lighthouse.sh",
+            str(self.client_config["entrypoint"]),
             str(self.client_config["debug-level"]),
             testnet_dir,
-            node_dir,
-            web3_provider,
+            f"{testnet_dir}/node_{self.curr_node}",
+            f'http://{geth_config["ip-start"]}:{geth_config["http-port"]}',
             str(self.get_ip()),
             str(int(self.client_config["start-p2p-port"]) + self.curr_node),
             str(int(self.client_config["start-rest-port"]) + self.curr_node),
@@ -193,15 +192,14 @@ class TekuClientWriter(ClientWriter):
         ETH1_ENDPOINT=$7
         """
         testnet_dir = str(self.client_config["docker-testnet-dir"])
-        node_dir = f"{testnet_dir}/node_{self.curr_node}"
         geth_config = self.global_config["pow-chain"]["geth"]
-        web3_provider = f'http://{geth_config["ip-start"]}:{geth_config["http-port"]}'
+
         return [
-            "/data/scripts/launch-teku.sh",
+            str(self.client_config["entrypoint"]),
             str(self.client_config["debug-level"]),
-            testnet_dir,
-            node_dir,
-            web3_provider,
+            str(self.client_config["docker-testnet-dir"]),
+            f"{testnet_dir}/node_{self.curr_node}",
+            f'http://{geth_config["ip-start"]}:{geth_config["http-port"]}',
             str(self.get_ip()),
             str(int(self.client_config["start-p2p-port"]) + self.curr_node),
             str(int(self.client_config["start-rest-port"]) + self.curr_node),
