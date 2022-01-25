@@ -15,6 +15,8 @@ RUN apt-get update && apt-get -y upgrade && apt-get install -y --no-install-reco
         wget \
 		git \
 		clang \
+        python3-dev \
+        python3-pip \
 		vim 
 
 RUN add-apt-repository ppa:longsleep/golang-backports
@@ -25,6 +27,8 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /git
+
+RUN pip3 install web3 ruamel.yaml
 
 RUN go get -d github.com/ethereum/go-ethereum && \
     cd /root/go/pkg/mod/github.com/ethereum/go-ethereum* && \
