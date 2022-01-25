@@ -88,18 +88,11 @@ class GethGenesisConfig(object):
             self.genesis["alloc"][str(dca)] = global_deposit_contract
 
     def _genesis_config(self):
-        return {
-            "chainId": int(self.genesis_config["chain-id"]),
-            "homesteadBlock": int(self.genesis_config["homesteadBlock"]),
-            "eip150Block": int(self.genesis_config["eip150Block"]),
-            "eip155Block": int(self.genesis_config["eip155Block"]),
-            "eip158Block": int(self.genesis_config["eip158Block"]),
-            "byzantiumBlock": int(self.genesis_config["byzantiumBlock"]),
-            "constantinopleBlock": int(self.genesis_config["constantinopleBlock"]),
-            "petersburgBlock": int(self.genesis_config["petersburgBlock"]),
-            "istanbulBlock": int(self.genesis_config["istanbulBlock"]),
-            "berlinBlock": int(self.genesis_config["berlinBlock"]),
-        }
+        out = {}
+        for key in self.genesis_config["config"]:
+            out[key] = int(self.genesis_config["config"][key])
+
+        return out
 
     # allocate 1 wei to all possible pre-compiles.
     def _fill_all_precompiles(self):

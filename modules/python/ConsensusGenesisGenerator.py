@@ -13,14 +13,14 @@ from ruamel import yaml
 
 
 class ConsensusGenesisGenerator(object):
-    def __init__(self, global_config, genesis_config_path):
+    def __init__(self, global_config, genesis_config_path, docker):
         self.global_config = global_config
         self.genesis_config_path = genesis_config_path
         self.start_fork = global_config["pos-chain"]["config"]["genesis-fork-name"]
         self.preset_name = self.global_config["pos-chain"]["config"]["preset"]
 
         self.possible_forks = ["phase0", "altair", "merge", "sharding"]
-        self.implemented_forks = ["phase0", "altair"]
+        self.implemented_forks = ["phase0", "altair", "merge"]
 
         if not self.start_fork in self.possible_forks:
             raise Exception(
@@ -40,7 +40,14 @@ class ConsensusGenesisGenerator(object):
             "merge": ["phase0", "altair", "merge"],
         }
 
-        # how many pre-deployed validators.
+        if docker:
+            self.eth1_config = self.global_config["pow-chain"]["files"][
+                "docker-eth1-genesis-file"
+            ]
+        else:
+            self.eth1_config = self.global_config["pow-chain"]["files"][
+                "host-eth1-genesis-file"
+            ]
 
     def _get_cmd(self, out_file):
         self._create_tmp_validator_yaml()
@@ -60,6 +67,9 @@ class ConsensusGenesisGenerator(object):
 
         # if tranches:
         #     self.cmd += ['--tranches-dir', '/tmp/tranches']
+        if self.start_fork == "merge":
+            cmd.append("--eth1-config")
+            cmd.append(self.eth1_config)
 
         return cmd
 
@@ -102,7 +112,7 @@ def create_genesis_ssz(global_config, out_file, docker=True):
     else:
         genesis_config = global_config["pos-chain"]["files"]["host-genesis-config"]
 
-    ccg = ConsensusGenesisGenerator(global_config, genesis_config)
+    ccg = ConsensusGenesisGenerator(global_config, genesis_config, docker)
     print(f"Writing genesis.ssz to {out_file}")
     ccg.write_to_file(out_file)
     ccg.clean_up()
