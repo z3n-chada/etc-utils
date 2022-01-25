@@ -23,11 +23,15 @@ geth init \
     $GENESIS_CONFIG
 
 geth \
+    --catalyst \
     --networkid $NETWORK_ID \
     --http \
     --http.api $HTTP_APIS \
     --http.port $HTTP_PORT \
     --http.addr 0.0.0.0 \
+    --http.corsdomain "*" \
+    --http.vhosts="*" \
+    --rpc.allow-unprotected-txs \
     --nodiscover \
     --keystore /data/geth-keystores/ \
     --unlock "0x51Dd070D1f6f8dB48CA5b0E47D7e899aea6b1AF5" --password /data/geth-account-passwords.txt --mine \

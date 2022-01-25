@@ -8,7 +8,10 @@ import ruamel.yaml as yaml
 
 from modules.python.ConsensusGenesisConfigWriter import create_consensus_config
 from modules.python.ConsensusGenesisGenerator import create_genesis_ssz
-from modules.python.DockerWriter import create_bootstrap_docker_compose, create_docker_compose
+from modules.python.DockerWriter import (
+    create_bootstrap_docker_compose,
+    create_docker_compose,
+)
 from modules.python.GethGenesisWriter import create_geth_genesis
 from modules.python.TestnetDirectoryGenerator import create_testnet_dirs
 
