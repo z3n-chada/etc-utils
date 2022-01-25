@@ -70,21 +70,27 @@ pow-chain:
         network-id: 0x01000666
         http-port: 8545
         ws-port: 8546
-        http-apis: "net,eth,web3,personal"
-        ws-apis: "net,eth,web3,personal"
+        http-apis: "engine,net,eth,debug,txpool"
+        ws-apis: "engine,net,eth,debug,txpool"
+        # script to execute
+        entrypoint: "/data/scripts/launch-phase0-clique-geth.sh" #wrt to docker.
 
     geth-genesis:
         genesis-delay: 10 # seconds from now for genesis timestamp.
-        chain-id: 0x01000666
-        homesteadBlock: 0
-        eip150Block: 0
-        eip155Block: 0
-        eip158Block: 0
-        byzantiumBlock: 0
-        constantinopleBlock: 0
-        petersburgBlock: 0
-        istanbulBlock: 0
-        berlinBlock: 0
+        config:
+          chainId: 0x01000666
+          homesteadBlock: 0
+          eip150Block: 0
+          eip155Block: 0
+          eip158Block: 0
+          byzantiumBlock: 0
+          constantinopleBlock: 0
+          petersburgBlock: 0
+          istanbulBlock: 0
+          berlinBlock: 0
+          londonBlock: 0
+          mergeForkBlock: 10000
+          terminalTotalDifficulty: 5000000000
 
     accounts:
         eth1-account-mnemonic: "cat swing flag economy stadium alone churn speed unique patch report train"
